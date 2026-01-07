@@ -11,7 +11,7 @@ use crate::{
     flash::FlashMessage,
     handlers::errors::HandlerResult,
     magic_link,
-    models::user::{FIELD_EMAIL, MagicLinkRequestForm},
+    models::sign_in::{FIELD_EMAIL, MagicLinkRequestForm},
     paths,
     views::pages,
 };

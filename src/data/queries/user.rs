@@ -1,12 +1,12 @@
 use sqlx::PgPool;
-use crate::data::errors::DataError;
+use crate::{data::errors::DataError, models::UserId};
 
 pub struct UserInfo {
     pub email: String,
     pub is_admin: bool,
 }
 
-pub async fn get_user_info(db: &PgPool, user_id: i32) -> Result<Option<UserInfo>, DataError> {
+pub async fn get_user_info(db: &PgPool, user_id: UserId) -> Result<Option<UserInfo>, DataError> {
     let result = sqlx::query!(
         r#"
         SELECT
@@ -15,7 +15,7 @@ pub async fn get_user_info(db: &PgPool, user_id: i32) -> Result<Option<UserInfo>
         FROM users u
         WHERE u.user_id = $1
         "#,
-        user_id
+        user_id.as_i32()
     )
     .fetch_optional(db)
     .await?;
@@ -26,8 +26,8 @@ pub async fn get_user_info(db: &PgPool, user_id: i32) -> Result<Option<UserInfo>
     }))
 }
 
-pub async fn get_user_email(db: &PgPool, user_id: i32) -> Result<Option<String>, DataError> {
-    let result = sqlx::query!("SELECT email FROM users WHERE user_id = $1", user_id)
+pub async fn get_user_email(db: &PgPool, user_id: UserId) -> Result<Option<String>, DataError> {
+    let result = sqlx::query!("SELECT email FROM users WHERE user_id = $1", user_id.as_i32())
         .fetch_optional(db)
         .await?;
 

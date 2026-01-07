@@ -13,13 +13,24 @@ pub fn format_price(amount: i32) -> String {
 }
 
 pub fn format_datetime(dt: OffsetDateTime) -> String {
-    let formatted_date = dt.format(&Rfc3339).unwrap_or("Invalid date".to_string());
-    let datetime_parts: Vec<&str> = formatted_date.split('T').collect();
-    let date_part = datetime_parts.first().unwrap_or(&"");
-    let time_part = datetime_parts.get(1).and_then(|t| t.split('.').next()).unwrap_or("");
-    if !time_part.is_empty() {
-        format!("{} {}", date_part, time_part)
-    } else {
+    let formatted = match dt.format(&Rfc3339) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::error!(error = %e, "Failed to format datetime as RFC3339");
+            return "Invalid date".to_string();
+        }
+    };
+
+    let datetime_parts: Vec<&str> = formatted.split('T').collect();
+    let date_part = datetime_parts.first().copied().unwrap_or("");
+    let time_part = datetime_parts
+        .get(1)
+        .and_then(|t| t.split('.').next())
+        .unwrap_or("");
+
+    if time_part.is_empty() {
         date_part.to_string()
+    } else {
+        format!("{} {}", date_part, time_part)
     }
 }

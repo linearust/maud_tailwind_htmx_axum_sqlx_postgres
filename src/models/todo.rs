@@ -10,7 +10,7 @@ pub struct CreateTodoForm {
 }
 
 pub struct Todo {
-    pub todo_id: i32,
+    pub todo_id: crate::models::TodoId,
     pub task: String,
     pub is_done: bool,
 }

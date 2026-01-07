@@ -1,6 +1,52 @@
 use crate::{auth::CurrentUser, constants::{cdn, payment}, flash::FlashMessage, formatting::format_price, models::order::Order, paths, views::layout::base};
 use maud::{Markup, PreEscaped, html};
 
+fn toss_payment_script(client_key: &str, order: &Order, success_url: &str, fail_url: &str) -> Markup {
+    html! {
+        script src=(cdn::TOSS_PAYMENTS_SDK_URL) {}
+        script {
+            (PreEscaped(format!(r#"
+                const button = document.getElementById('payment-button');
+
+                try {{
+                    const tossPayments = TossPayments('{client_key}');
+                    button.disabled = false;
+
+                    const paymentParams = {{
+                        amount: {amount},
+                        orderId: '{order_id}',
+                        orderName: '{prefix} - {filename}',
+                        successUrl: window.location.origin + '{success_url}',
+                        failUrl: window.location.origin + '{fail_url}'
+                    }};
+
+                    button.addEventListener('click', function() {{
+                        console.log('Payment request parameters:', paymentParams);
+
+                        tossPayments.requestPayment('카드', paymentParams)
+                        .catch(function(error) {{
+                            console.error('Payment request failed:', error);
+                            alert('결제 요청 실패: ' + (error.message || error.code));
+                        }});
+                    }});
+                }} catch (error) {{
+                    console.error('Toss Payments initialization failed:', error);
+                    button.disabled = true;
+                    button.textContent = 'Payment Error';
+                }}
+            "#,
+                client_key = client_key,
+                amount = order.price_amount,
+                order_id = order.order_number,
+                prefix = payment::ORDER_NAME_PREFIX,
+                filename = order.filename,
+                success_url = success_url,
+                fail_url = fail_url
+            )))
+        }
+    }
+}
+
 pub fn checkout(
     current_user: &CurrentUser,
     flash: Option<&FlashMessage>,
@@ -44,47 +90,7 @@ pub fn checkout(
             }
         }
 
-        script src=(cdn::TOSS_PAYMENTS_SDK_URL) {}
-        script {
-            (PreEscaped(format!(r#"
-                const button = document.getElementById('payment-button');
-
-                try {{
-                    const tossPayments = TossPayments('{}');
-                    button.disabled = false;
-
-                    const paymentParams = {{
-                        amount: {},
-                        orderId: '{}',
-                        orderName: '{} - {}',
-                        successUrl: window.location.origin + '{}',
-                        failUrl: window.location.origin + '{}'
-                    }};
-
-                    button.addEventListener('click', function() {{
-                        console.log('Payment request parameters:', paymentParams);
-
-                        tossPayments.requestPayment('카드', paymentParams)
-                        .catch(function(error) {{
-                            console.error('Payment request failed:', error);
-                            alert('결제 요청 실패: ' + (error.message || error.code));
-                        }});
-                    }});
-                }} catch (error) {{
-                    console.error('Toss Payments initialization failed:', error);
-                    button.disabled = true;
-                    button.textContent = 'Payment Error';
-                }}
-            "#,
-                client_key,
-                order.price_amount,
-                order.order_number,
-                payment::ORDER_NAME_PREFIX,
-                order.filename,
-                success_url,
-                fail_url
-            )))
-        }
+        (toss_payment_script(client_key, order, &success_url, &fail_url))
     };
 
     base::base_layout(current_user, flash, site_name, "Checkout", "Complete your payment", content)

@@ -8,7 +8,6 @@ pub fn pagination(base_path: &str, current_page: i64, total_pages: i64, has_prev
 
     html! {
         div class="flex items-center justify-center gap-2 mt-4" {
-            // Previous arrow
             @if has_prev {
                 a href=(paths::with_page(base_path, current_page - 1))
                     class="text-indigo-600 hover:underline"
@@ -19,7 +18,6 @@ pub fn pagination(base_path: &str, current_page: i64, total_pages: i64, has_prev
                 span class="text-gray-400" { "←" }
             }
 
-            // Page numbers
             @for page in page_numbers(current_page, total_pages) {
                 @match page {
                     PageNumber::Page(page_number) => {
@@ -39,7 +37,6 @@ pub fn pagination(base_path: &str, current_page: i64, total_pages: i64, has_prev
                 }
             }
 
-            // Next arrow
             @if has_next {
                 a href=(paths::with_page(base_path, current_page + 1))
                     class="text-indigo-600 hover:underline"

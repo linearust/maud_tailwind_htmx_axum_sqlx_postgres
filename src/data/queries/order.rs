@@ -1,7 +1,7 @@
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{constants::errors, data::errors::DataError, models::order::{Order, OrderSummary}};
+use crate::{constants::errors, data::errors::DataError, models::{order::{Order, OrderSummary}, UserId}};
 
 pub async fn get_order(db: &PgPool, order_id: Uuid) -> Result<Option<Order>, DataError> {
     let order = sqlx::query_as!(
@@ -63,7 +63,7 @@ pub async fn get_order_by_order_number(db: &PgPool, order_number: &str) -> Resul
 
 pub async fn get_orders_for_user(
     db: &PgPool,
-    user_id: i32,
+    user_id: UserId,
     limit: i64,
 ) -> Result<Vec<OrderSummary>, DataError> {
     let orders = sqlx::query_as!(
@@ -83,7 +83,7 @@ pub async fn get_orders_for_user(
         ORDER BY created_at DESC
         LIMIT $2
         "#,
-        user_id,
+        user_id.as_i32(),
         limit
     )
     .fetch_all(db)
@@ -95,7 +95,7 @@ pub async fn get_orders_for_user(
 pub async fn get_order_for_user(
     db: &PgPool,
     order_id: Uuid,
-    user_id: i32,
+    user_id: UserId,
 ) -> Result<Order, DataError> {
     let order = get_order(db, order_id)
         .await?
@@ -107,7 +107,7 @@ pub async fn get_order_for_user(
 pub async fn get_order_by_order_number_for_user(
     db: &PgPool,
     order_number: &str,
-    user_id: i32,
+    user_id: UserId,
 ) -> Result<Order, DataError> {
     let order = get_order_by_order_number(db, order_number)
         .await?

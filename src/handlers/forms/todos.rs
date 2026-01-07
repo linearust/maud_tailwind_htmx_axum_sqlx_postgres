@@ -10,7 +10,7 @@ use crate::{
     data::{commands, queries},
     flash::FlashMessage,
     handlers::errors::HandlerResult,
-    models::todo::{CreateTodoForm, FIELD_TASK},
+    models::{todo::{CreateTodoForm, FIELD_TASK}, UserId},
     paths::pages,
     views::pages as view,
 };
@@ -40,7 +40,7 @@ async fn render_validation_errors(
     db: &PgPool,
     current_user: &CurrentUser,
     site_name: &str,
-    user_id: i32,
+    user_id: UserId,
     form: &CreateTodoForm,
     validation_errors: &validator::ValidationErrors,
 ) -> HandlerResult {

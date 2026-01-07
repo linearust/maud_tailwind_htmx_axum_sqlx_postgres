@@ -1,3 +1,5 @@
+use crate::models::UserId;
+
 pub const SESSION_USER_ID_KEY: &str = "authenticated_user_id";
 
 /// Represents the current user's authentication state.
@@ -28,7 +30,7 @@ pub const SESSION_USER_ID_KEY: &str = "authenticated_user_id";
 pub enum CurrentUser {
     /// An authenticated user with a valid session
     Authenticated {
-        user_id: i32,
+        user_id: UserId,
         email: String,
         is_admin: bool,
     },
@@ -53,7 +55,7 @@ impl CurrentUser {
     /// 1. The route is properly registered in `protected_routes()`
     /// 2. Middleware ordering hasn't changed
     /// 3. The handler is actually in a protected route group
-    pub fn require_authenticated(&self) -> i32 {
+    pub fn require_authenticated(&self) -> UserId {
         match self {
             CurrentUser::Authenticated { user_id, .. } => *user_id,
             CurrentUser::Guest => unreachable!(

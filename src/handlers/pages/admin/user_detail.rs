@@ -8,20 +8,21 @@ use crate::{
     constants::admin::ITEMS_PER_PAGE,
     data::queries::admin,
     flash::FlashMessage,
-    handlers::{errors::HandlerError, pagination::PaginationQuery},
-    models::admin::PaginatedResult,
+    handlers::errors::HandlerError,
+    models::{pagination::PaginationQuery, admin::PaginatedResult, UserId},
     views::pages::admin as admin_views,
 };
 
 pub async fn get_admin_user_detail(
     State(config): State<AppConfig>,
     State(db): State<PgPool>,
-    Path(user_id): Path<i32>,
+    Path(raw_user_id): Path<i32>,
     Query(query): Query<PaginationQuery>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
 ) -> Result<Markup, HandlerError> {
     let page = query.page.max(1);
+    let user_id = UserId::from_db(raw_user_id);
 
     let user = admin::get_user_detail(&db, user_id).await?;
 

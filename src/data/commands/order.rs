@@ -1,10 +1,10 @@
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{data::errors::DataError, models::order::{Order, PaymentStatus}};
+use crate::{data::errors::DataError, models::{order::{Order, PaymentStatus}, UserId}};
 
 pub struct CreateOrderParams {
-    pub user_id: i32,
+    pub user_id: UserId,
     pub user_email: String,
     pub filename: String,
     pub file_size: i32,
@@ -35,7 +35,7 @@ pub async fn create_order(db: &PgPool, params: CreateOrderParams) -> Result<Orde
             created_at,
             paid_at
         "#,
-        params.user_id,
+        params.user_id.as_i32(),
         params.user_email,
         params.filename,
         params.file_size,

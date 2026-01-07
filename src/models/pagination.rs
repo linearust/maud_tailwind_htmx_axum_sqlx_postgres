@@ -1,3 +1,17 @@
+use serde::Deserialize;
+
+/// Default page number for pagination queries
+pub fn default_page() -> i64 {
+    1
+}
+
+/// Query parameters for paginated endpoints
+#[derive(Deserialize)]
+pub struct PaginationQuery {
+    #[serde(default = "default_page")]
+    pub page: i64,
+}
+
 pub struct PaginatedResult<T> {
     pub items: Vec<T>,
     pub page: i64,

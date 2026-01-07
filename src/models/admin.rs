@@ -19,14 +19,7 @@ pub struct UserListItem {
     pub total_spent: i32,
 }
 
-pub struct UserDetail {
-    pub user_id: i32,
-    pub email: String,
-    pub is_admin: bool,
-    pub created_at: OffsetDateTime,
-    pub order_count: i64,
-    pub total_spent: i32,
-}
+pub type UserDetail = UserListItem;
 
 pub struct OrderListItem {
     pub order_id: String,

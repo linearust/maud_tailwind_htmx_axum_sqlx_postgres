@@ -4,6 +4,7 @@ use crate::{
     models::{
         admin::{AdminStats, UserListItem, UserDetail, OrderListItem, OrderDetail},
         order::PaymentStatus,
+        UserId,
     },
 };
 
@@ -82,7 +83,7 @@ pub async fn get_total_user_count(db: &PgPool) -> Result<i64, DataError> {
     Ok(result.count)
 }
 
-pub async fn get_user_detail(db: &PgPool, user_id: i32) -> Result<UserDetail, DataError> {
+pub async fn get_user_detail(db: &PgPool, user_id: UserId) -> Result<UserDetail, DataError> {
     let result = sqlx::query!(
         r#"
         SELECT
@@ -97,7 +98,7 @@ pub async fn get_user_detail(db: &PgPool, user_id: i32) -> Result<UserDetail, Da
         WHERE u.user_id = $1
         GROUP BY u.user_id, u.email, u.created_at
         "#,
-        user_id
+        user_id.as_i32()
     )
     .fetch_one(db)
     .await?;
@@ -114,7 +115,7 @@ pub async fn get_user_detail(db: &PgPool, user_id: i32) -> Result<UserDetail, Da
 
 pub async fn get_user_orders(
     db: &PgPool,
-    user_id: i32,
+    user_id: UserId,
     page: i64,
     per_page: i64,
 ) -> Result<Vec<OrderListItem>, DataError> {
@@ -135,7 +136,7 @@ pub async fn get_user_orders(
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         "#,
-        user_id,
+        user_id.as_i32(),
         per_page,
         offset
     )
@@ -144,14 +145,14 @@ pub async fn get_user_orders(
     .map_err(DataError::from)
 }
 
-pub async fn get_user_order_count(db: &PgPool, user_id: i32) -> Result<i64, DataError> {
+pub async fn get_user_order_count(db: &PgPool, user_id: UserId) -> Result<i64, DataError> {
     let result = sqlx::query!(
         r#"
         SELECT COUNT(*) as "count!"
         FROM orders
         WHERE user_id = $1
         "#,
-        user_id
+        user_id.as_i32()
     )
     .fetch_one(db)
     .await?;

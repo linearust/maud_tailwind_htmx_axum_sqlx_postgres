@@ -30,7 +30,7 @@ pub mod pages {
     pub const TEXT_ANALYZER: &str = "/text_analyzer";
     pub const QUOTE: &str = "/quote/{order_id}";
     pub const CHECKOUT: &str = "/checkout/{order_id}";
-    pub const RESULT: &str = "/result/{order_id}";
+    pub const PAYMENT_CONFIRMATION: &str = "/payment_confirmation/{order_id}";
 
     pub mod admin {
         pub const HOME: &str = "/admin";
@@ -91,8 +91,9 @@ pub fn with_page(base: &str, page: i64) -> String {
 pub mod helpers {
     use super::*;
     use uuid::Uuid;
+    use crate::models::UserId;
 
-    pub fn user_detail_path(user_id: i32) -> String {
+    pub fn user_detail_path(user_id: UserId) -> String {
         with_param(pages::admin::USER_DETAIL, "user_id", &user_id)
     }
 
@@ -108,7 +109,7 @@ pub mod helpers {
         with_param(pages::CHECKOUT, "order_id", order_id)
     }
 
-    pub fn result_path(order_id: &Uuid) -> String {
-        with_param(pages::RESULT, "order_id", order_id)
+    pub fn payment_confirmation_path(order_id: &Uuid) -> String {
+        with_param(pages::PAYMENT_CONFIRMATION, "order_id", order_id)
     }
 }

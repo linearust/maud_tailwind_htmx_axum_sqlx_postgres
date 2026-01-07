@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-use crate::{constants::errors, data::errors::DataError};
+use crate::{constants::errors, data::errors::DataError, models::UserId};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "text", rename_all = "lowercase")]
@@ -46,7 +46,7 @@ impl PaymentStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Order {
     pub order_id: Uuid,
-    pub user_id: i32,
+    pub user_id: UserId,
     pub user_email: String,
     pub filename: String,
     pub file_size: i32,
@@ -61,7 +61,7 @@ pub struct Order {
 }
 
 impl Order {
-    pub fn verify_ownership(&self, user_id: i32) -> Result<(), DataError> {
+    pub fn verify_ownership(&self, user_id: UserId) -> Result<(), DataError> {
         if self.user_id != user_id {
             Err(DataError::Unauthorized(errors::NOT_YOUR_ORDER))
         } else {
@@ -69,7 +69,7 @@ impl Order {
         }
     }
 
-    pub fn generate_order_number(user_id: i32) -> String {
+    pub fn generate_order_number(user_id: UserId) -> String {
         let uuid_string = Uuid::new_v4().to_string();
         let uuid_prefix = uuid_string
             .split('-')

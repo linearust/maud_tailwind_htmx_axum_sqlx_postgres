@@ -1,7 +1,7 @@
 use crate::{
     auth::CurrentUser,
     flash::FlashMessage,
-    models::user::FIELD_EMAIL,
+    models::sign_in::FIELD_EMAIL,
     paths,
     views::{components::form, layout::base::base_layout},
 };

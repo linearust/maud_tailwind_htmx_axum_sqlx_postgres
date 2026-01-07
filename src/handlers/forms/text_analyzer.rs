@@ -12,54 +12,72 @@ use crate::{
 };
 use tower_sessions::Session;
 
+struct ParsedUpload {
+    filename: String,
+    file_size: i32,
+    text_content: String,
+}
+
+enum ParseResult {
+    Success(ParsedUpload),
+    FileTooLarge,
+}
+
+async fn parse_file_upload(mut multipart: Multipart) -> Result<ParseResult, DataError> {
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        tracing::error!("Multipart error: {}", e);
+        DataError::InvalidInput(format!("Failed to process multipart data: {}", e))
+    })? {
+        if field.name().unwrap_or("") != "file" {
+            continue;
+        }
+
+        let filename = field.file_name().map(|s| s.to_string());
+        let data = field.bytes().await.map_err(|e| {
+            tracing::error!("Failed to read file: {}", e);
+            DataError::InvalidInput(format!("Failed to read file: {}", e))
+        })?;
+
+        if data.len() > file_upload::MAX_FILE_SIZE {
+            return Ok(ParseResult::FileTooLarge);
+        }
+
+        let text_content = String::from_utf8(data.to_vec()).map_err(|e| {
+            tracing::error!("Invalid UTF-8 in file: {}", e);
+            DataError::InvalidInput("File must be valid UTF-8 text".to_string())
+        })?;
+
+        return Ok(ParseResult::Success(ParsedUpload {
+            filename: filename.ok_or(DataError::NotFound(errors::NO_FILE_PROVIDED))?,
+            file_size: data.len() as i32,
+            text_content,
+        }));
+    }
+
+    Err(DataError::NotFound(errors::NO_FILE_PROVIDED))
+}
+
 pub async fn post_forms_text_analyzer(
     State(db): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
-    mut multipart: Multipart,
+    multipart: Multipart,
 ) -> HandlerResult {
     let (user_id, user_email) = match &current_user {
         CurrentUser::Authenticated { user_id, email, .. } => (*user_id, email.clone()),
         CurrentUser::Guest => unreachable!("Protected route accessed by guest"),
     };
 
-    let mut filename: Option<String> = None;
-    let mut file_size: Option<usize> = None;
-    let mut text_content: Option<String> = None;
-
-    while let Some(field) = multipart.next_field().await.map_err(|e| {
-        tracing::error!("Multipart error: {}", e);
-        DataError::InvalidInput(format!("Failed to process multipart data: {}", e))
-    })? {
-        let field_name = field.name().unwrap_or("").to_string();
-
-        if field_name == "file" {
-            filename = field.file_name().map(|s| s.to_string());
-            let data = field.bytes().await.map_err(|e| {
-                tracing::error!("Failed to read file: {}", e);
-                DataError::InvalidInput(format!("Failed to read file: {}", e))
-            })?;
-
-            file_size = Some(data.len());
-
-            if data.len() > file_upload::MAX_FILE_SIZE {
-                return Ok(FlashMessage::error(format!("File too large. Maximum size is {} MB.", file_upload::MAX_FILE_SIZE / 1024 / 1024))
-                    .set_and_redirect(&session, paths::pages::TEXT_ANALYZER)
-                    .await?);
-            }
-
-            text_content = Some(String::from_utf8(data.to_vec()).map_err(|e| {
-                tracing::error!("Invalid UTF-8 in file: {}", e);
-                DataError::InvalidInput("File must be valid UTF-8 text".to_string())
-            })?);
+    let upload = match parse_file_upload(multipart).await? {
+        ParseResult::FileTooLarge => {
+            return Ok(FlashMessage::error(format!("File too large. Maximum size is {} MB.", file_upload::MAX_FILE_SIZE / 1024 / 1024))
+                .set_and_redirect(&session, paths::pages::TEXT_ANALYZER)
+                .await?);
         }
-    }
+        ParseResult::Success(upload) => upload,
+    };
 
-    let filename = filename.ok_or(DataError::NotFound(errors::NO_FILE_PROVIDED))?;
-    let file_size = file_size.ok_or(DataError::NotFound(errors::NO_FILE_PROVIDED))? as i32;
-    let text_content = text_content.ok_or(DataError::NotFound(errors::NO_FILE_CONTENT))?;
-
-    let text_length = text_content.chars().count() as i32;
+    let text_length = upload.text_content.chars().count() as i32;
     let calculated_price = text_length * pricing::PRICE_PER_CHARACTER;
     let price_amount = calculated_price.max(pricing::MINIMUM_ORDER_AMOUNT);
 
@@ -70,9 +88,9 @@ pub async fn post_forms_text_analyzer(
         commands::order::CreateOrderParams {
             user_id,
             user_email,
-            filename,
-            file_size,
-            text_content,
+            filename: upload.filename,
+            file_size: upload.file_size,
+            text_content: upload.text_content,
             text_length,
             price_amount,
             order_number,

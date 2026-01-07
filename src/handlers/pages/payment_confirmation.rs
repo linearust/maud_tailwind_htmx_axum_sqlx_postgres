@@ -14,7 +14,7 @@ use crate::{
     views::pages,
 };
 
-pub async fn get_result(
+pub async fn get_payment_confirmation(
     State(config): State<AppConfig>,
     State(db): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
@@ -29,5 +29,5 @@ pub async fn get_result(
         return Err(DataError::Unauthorized(errors::PAYMENT_NOT_COMPLETED).into());
     }
 
-    Ok(pages::result(&current_user, flash.as_ref(), config.site_name(), &order))
+    Ok(pages::payment_confirmation(&current_user, flash.as_ref(), config.site_name(), &order))
 }

@@ -1,7 +1,7 @@
 use crate::{auth::CurrentUser, flash::FlashMessage, models::order::Order, paths, views::layout::base::base_layout};
 use maud::{Markup, html};
 
-pub fn result(
+pub fn payment_confirmation(
     current_user: &CurrentUser,
     flash: Option<&FlashMessage>,
     site_name: &str,
@@ -13,7 +13,7 @@ pub fn result(
         div class="max-w-lg mx-auto" {
             p class="text-green-700 mb-3" { "✓ Payment successful" }
 
-            h1 class="text-xl mb-3" { "Results" }
+            h1 class="text-xl mb-3" { "Analysis Complete" }
 
             div class="space-y-3" {
                 div class="grid grid-cols-2 gap-3 text-sm" {
@@ -35,5 +35,5 @@ pub fn result(
         }
     };
 
-    base_layout(current_user, flash, site_name, "Results", "Text analysis results", content)
+    base_layout(current_user, flash, site_name, "Payment Confirmation", "Text analysis results", content)
 }

@@ -14,5 +14,5 @@ pub fn protected_page_routes() -> Router<AppState> {
         .route(paths::pages::TEXT_ANALYZER, get(pages::get_text_analyzer))
         .route(paths::pages::QUOTE, get(pages::get_quote))
         .route(paths::pages::CHECKOUT, get(pages::get_checkout))
-        .route(paths::pages::RESULT, get(pages::get_result))
+        .route(paths::pages::PAYMENT_CONFIRMATION, get(pages::get_payment_confirmation))
 }

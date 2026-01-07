@@ -8,7 +8,8 @@ use crate::{
     constants::admin::ITEMS_PER_PAGE,
     data::queries::admin,
     flash::FlashMessage,
-    handlers::{errors::HandlerError, pagination::PaginationQuery},
+    handlers::errors::HandlerError,
+    models::pagination::PaginationQuery,
     models::admin::PaginatedResult,
     views::pages::admin as admin_views,
 };

@@ -22,8 +22,8 @@ pub struct OrdersQuery {
 }
 
 pub async fn get_admin_orders(
-    State(db): State<PgPool>,
     State(config): State<AppConfig>,
+    State(db): State<PgPool>,
     Query(query): Query<OrdersQuery>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,

@@ -1,4 +1,4 @@
-use axum::{Extension, Form, extract::State, http::StatusCode, response::{IntoResponse, Response}};
+use axum::{Extension, Form, extract::State, http::StatusCode, response::IntoResponse};
 use sqlx::PgPool;
 use tower_sessions::Session;
 use validator::Validate;
@@ -9,7 +9,7 @@ use crate::{
     constants::messages,
     data::{commands, queries},
     flash::FlashMessage,
-    handlers::errors::HandlerError,
+    handlers::errors::HandlerResult,
     models::todo::{CreateTodoForm, FIELD_TASK},
     paths::pages,
     views::pages as view,
@@ -23,7 +23,7 @@ pub async fn post_forms_todos(
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     Form(form): Form<CreateTodoForm>,
-) -> Result<Response, HandlerError> {
+) -> HandlerResult {
     let user_id = current_user.require_authenticated();
 
     if let Err(validation_errors) = form.validate() {
@@ -43,7 +43,7 @@ async fn render_validation_errors(
     user_id: i32,
     form: &CreateTodoForm,
     validation_errors: &validator::ValidationErrors,
-) -> Result<Response, HandlerError> {
+) -> HandlerResult {
     let errors = parse_validation_errors(validation_errors);
     let todos_list = queries::todo::get_todos_for_user(db, user_id).await?;
 

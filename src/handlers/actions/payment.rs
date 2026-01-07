@@ -1,4 +1,4 @@
-use axum::{Extension, Form, extract::{Query, State}, response::{IntoResponse, Redirect, Response}};
+use axum::{Extension, Form, extract::{Query, State}, response::{IntoResponse, Redirect}};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -9,6 +9,7 @@ use crate::{
     constants::messages,
     data::{commands, queries},
     flash::FlashMessage,
+    handlers::errors::HandlerResult,
     models::order::PaymentStatus,
     paths,
 };
@@ -24,7 +25,7 @@ pub async fn post_actions_payment_initiate(
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     Form(form): Form<PaymentInitiateForm>,
-) -> Result<Response, crate::handlers::errors::HandlerError> {
+) -> HandlerResult {
     let user_id = current_user.require_authenticated();
 
     let order = queries::order::get_order_for_user(&db, form.order_id, user_id).await?;
@@ -63,7 +64,7 @@ pub async fn get_actions_payment_verify(
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     Query(query): Query<PaymentVerifyQuery>,
-) -> Result<Response, crate::handlers::errors::HandlerError> {
+) -> HandlerResult {
     let user_id = current_user.require_authenticated();
 
     let order = queries::order::get_order_by_order_number_for_user(&db, &query.order_id, user_id).await?;

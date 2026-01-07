@@ -1,6 +1,13 @@
 use axum::{Extension, extract::State};
-use crate::{auth::CurrentUser, config::AppConfig, flash::FlashMessage, handlers::errors::HandlerError, views::pages};
 use maud::Markup;
+
+use crate::{
+    auth::CurrentUser,
+    config::AppConfig,
+    flash::FlashMessage,
+    handlers::errors::HandlerError,
+    views::pages,
+};
 
 pub async fn get_sign_in(
     State(config): State<AppConfig>,

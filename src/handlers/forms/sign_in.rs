@@ -9,6 +9,7 @@ use crate::{
     data::commands,
     email,
     flash::FlashMessage,
+    handlers::errors::HandlerResult,
     magic_link,
     models::user::{FIELD_EMAIL, MagicLinkRequestForm},
     paths,
@@ -24,7 +25,7 @@ pub async fn post_forms_sign_in(
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     Form(form): Form<MagicLinkRequestForm>,
-) -> Result<Response, crate::handlers::errors::HandlerError> {
+) -> HandlerResult {
     if let Err(validation_errors) = form.validate() {
         return Ok(render_validation_errors(&current_user, config.site_name(), &form, &validation_errors));
     }

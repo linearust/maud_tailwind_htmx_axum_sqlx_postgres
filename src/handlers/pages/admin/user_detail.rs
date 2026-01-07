@@ -14,8 +14,8 @@ use crate::{
 };
 
 pub async fn get_admin_user_detail(
-    State(db): State<PgPool>,
     State(config): State<AppConfig>,
+    State(db): State<PgPool>,
     Path(user_id): Path<i32>,
     Query(query): Query<PaginationQuery>,
     Extension(current_user): Extension<CurrentUser>,
@@ -27,7 +27,7 @@ pub async fn get_admin_user_detail(
 
     let orders = admin::get_user_orders(&db, user_id, page, ITEMS_PER_PAGE).await?;
 
-    let total_count = user.order_count;
+    let total_count = admin::get_user_order_count(&db, user_id).await?;
     let paginated_orders = PaginatedResult::new(orders, total_count, page, ITEMS_PER_PAGE);
 
     Ok(admin_views::user_detail(

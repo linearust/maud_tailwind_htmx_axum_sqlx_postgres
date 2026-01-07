@@ -1,9 +1,18 @@
 use axum::{Extension, extract::{Path, State}};
+use maud::Markup;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{auth::CurrentUser, config::AppConfig, constants::errors, data::{errors::DataError, queries}, flash::FlashMessage, handlers::errors::HandlerError, models::order::PaymentStatus, views::pages};
-use maud::Markup;
+use crate::{
+    auth::CurrentUser,
+    config::AppConfig,
+    constants::errors,
+    data::{errors::DataError, queries},
+    flash::FlashMessage,
+    handlers::errors::HandlerError,
+    models::order::PaymentStatus,
+    views::pages,
+};
 
 pub async fn get_result(
     State(config): State<AppConfig>,

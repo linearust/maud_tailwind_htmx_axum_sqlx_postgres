@@ -1,9 +1,16 @@
 use axum::{Extension, extract::{Path, State}};
+use maud::Markup;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{auth::CurrentUser, config::AppConfig, data::queries, flash::FlashMessage, handlers::errors::HandlerError, views::pages};
-use maud::Markup;
+use crate::{
+    auth::CurrentUser,
+    config::AppConfig,
+    data::queries,
+    flash::FlashMessage,
+    handlers::errors::HandlerError,
+    views::pages,
+};
 
 pub async fn get_quote(
     State(config): State<AppConfig>,

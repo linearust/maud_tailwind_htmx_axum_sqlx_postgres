@@ -1,4 +1,4 @@
-use axum::{Extension, extract::{Multipart, State}, response::{IntoResponse, Redirect, Response}};
+use axum::{Extension, extract::{Multipart, State}, response::{IntoResponse, Redirect}};
 use sqlx::PgPool;
 
 use crate::{
@@ -6,6 +6,7 @@ use crate::{
     constants::{errors, file_upload, pricing},
     data::{commands, errors::DataError},
     flash::FlashMessage,
+    handlers::errors::HandlerResult,
     models::order::Order,
     paths,
 };
@@ -16,7 +17,7 @@ pub async fn post_forms_text_analyzer(
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     mut multipart: Multipart,
-) -> Result<Response, crate::handlers::errors::HandlerError> {
+) -> HandlerResult {
     let (user_id, user_email) = match &current_user {
         CurrentUser::Authenticated { user_id, email, .. } => (*user_id, email.clone()),
         CurrentUser::Guest => unreachable!("Protected route accessed by guest"),

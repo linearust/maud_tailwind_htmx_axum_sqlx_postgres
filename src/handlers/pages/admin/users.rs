@@ -14,8 +14,8 @@ use crate::{
 };
 
 pub async fn get_admin_users(
-    State(db): State<PgPool>,
     State(config): State<AppConfig>,
+    State(db): State<PgPool>,
     Query(query): Query<PaginationQuery>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,

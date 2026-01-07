@@ -144,6 +144,21 @@ pub async fn get_user_orders(
     .map_err(DataError::from)
 }
 
+pub async fn get_user_order_count(db: &PgPool, user_id: i32) -> Result<i64, DataError> {
+    let result = sqlx::query!(
+        r#"
+        SELECT COUNT(*) as "count!"
+        FROM orders
+        WHERE user_id = $1
+        "#,
+        user_id
+    )
+    .fetch_one(db)
+    .await?;
+
+    Ok(result.count)
+}
+
 pub async fn get_orders_paginated(
     db: &PgPool,
     status_filter: Option<PaymentStatus>,

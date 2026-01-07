@@ -11,7 +11,7 @@ use crate::{
     paths::helpers,
 };
 
-pub async fn post_grant_role(
+pub async fn post_forms_admin_users_user_id_grant_role(
     State(db): State<PgPool>,
     Path(user_id): Path<i32>,
     Extension(current_user): Extension<CurrentUser>,

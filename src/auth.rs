@@ -18,12 +18,10 @@ pub const SESSION_USER_ID_KEY: &str = "authenticated_user_id";
 ///
 /// ## Critical: Middleware Ordering
 ///
-/// The middleware layers MUST be applied in this order:
-/// ```
-/// .layer(middleware::from_fn(middlewares::session_context))       // Loads CurrentUser
-/// .layer(session_layer)                                            // Provides Session
-/// .layer(middleware::from_fn(middlewares::require_authentication)) // Guards protected routes
-/// ```
+/// Layers are applied bottom-to-top but execute top-to-bottom:
+/// 1. `session_layer` provides Session extractor
+/// 2. `session_context` loads CurrentUser from session
+/// 3. `require_authentication` is applied per-route group in protected_routes()
 ///
 /// If middleware ordering changes, the `unreachable!()` assumption breaks and will panic.
 #[derive(Clone, Debug)]

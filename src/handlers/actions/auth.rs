@@ -25,7 +25,8 @@ pub async fn get_actions_auth_verify(
     let email = match commands::magic_link::verify_and_consume_magic_link(&db, &query.token).await
     {
         Ok(email) => email,
-        Err(_) => {
+        Err(e) => {
+            tracing::warn!("Magic link verification failed: {}", e);
             return Ok(FlashMessage::error(messages::MAGIC_LINK_INVALID)
                 .set_and_redirect(&session, paths::pages::SIGN_IN)
                 .await?);

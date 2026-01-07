@@ -22,14 +22,14 @@ pub fn pagination(base_path: &str, current_page: i64, total_pages: i64, has_prev
             // Page numbers
             @for page in page_numbers(current_page, total_pages) {
                 @match page {
-                    PageNumber::Page(p) => {
-                        @if p == current_page {
-                            span class="px-2" { (p) }
+                    PageNumber::Page(page_number) => {
+                        @if page_number == current_page {
+                            span class="px-2" { (page_number) }
                         } @else {
-                            a href=(paths::with_page(base_path, p))
+                            a href=(paths::with_page(base_path, page_number))
                                 class="px-2 text-indigo-600 hover:underline"
                             {
-                                (p)
+                                (page_number)
                             }
                         }
                     }
@@ -62,8 +62,8 @@ fn page_numbers(current: i64, total: i64) -> Vec<PageNumber> {
     let mut pages = Vec::new();
 
     if total <= 7 {
-        for p in 1..=total {
-            pages.push(PageNumber::Page(p));
+        for page_number in 1..=total {
+            pages.push(PageNumber::Page(page_number));
         }
         return pages;
     }
@@ -77,8 +77,8 @@ fn page_numbers(current: i64, total: i64) -> Vec<PageNumber> {
     let start = (current - 1).max(2);
     let end = (current + 1).min(total - 1);
 
-    for p in start..=end {
-        pages.push(PageNumber::Page(p));
+    for page_number in start..=end {
+        pages.push(PageNumber::Page(page_number));
     }
 
     if current < total - 2 {

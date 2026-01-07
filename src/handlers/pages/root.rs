@@ -1,7 +1,15 @@
 use axum::{Extension, extract::State};
-use sqlx::PgPool;
-use crate::{auth::CurrentUser, config::AppConfig, data::queries, flash::FlashMessage, handlers::errors::HandlerError, views::pages};
 use maud::Markup;
+use sqlx::PgPool;
+
+use crate::{
+    auth::CurrentUser,
+    config::AppConfig,
+    data::queries,
+    flash::FlashMessage,
+    handlers::errors::HandlerError,
+    views::pages,
+};
 
 pub async fn get_root(
     State(config): State<AppConfig>,

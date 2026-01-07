@@ -10,6 +10,7 @@ use crate::{
     data::queries,
     email,
     flash::FlashMessage,
+    handlers::errors::HandlerResult,
     models::contact::{ContactForm, FIELD_EMAIL, FIELD_MESSAGE},
     paths,
     views::pages,
@@ -23,7 +24,18 @@ pub async fn post_forms_contact(
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     Form(form): Form<ContactForm>,
-) -> Result<Response, crate::handlers::errors::HandlerError> {
+) -> HandlerResult {
+    // Validate message for all users (email validated only for guests)
+    if form.message.trim().is_empty() {
+        let mut errors = std::collections::HashMap::new();
+        errors.insert(FIELD_MESSAGE.to_string(), "Message cannot be empty".to_string());
+        let user_email = match &current_user {
+            CurrentUser::Authenticated { email, .. } => Some(email.clone()),
+            CurrentUser::Guest => None,
+        };
+        return Ok(render_validation_errors_direct(&current_user, config.site_name(), &form, errors, user_email));
+    }
+
     let email_to_use = match &current_user {
         CurrentUser::Authenticated { user_id, email, .. } => {
             queries::user::get_user_email(&db, *user_id)
@@ -58,6 +70,29 @@ fn render_validation_errors(
     user_email: Option<String>,
 ) -> Response {
     let errors = parse_validation_errors(validation_errors);
+    let email_to_show = user_email.as_deref().or(Some(&form.email));
+    (
+        StatusCode::BAD_REQUEST,
+        pages::root(
+            current_user,
+            None,
+            site_name,
+            email_to_show,
+            Some(&form.message),
+            errors.get(FIELD_EMAIL).map(String::as_str),
+            errors.get(FIELD_MESSAGE).map(String::as_str),
+        ),
+    )
+        .into_response()
+}
+
+fn render_validation_errors_direct(
+    current_user: &CurrentUser,
+    site_name: &str,
+    form: &ContactForm,
+    errors: std::collections::HashMap<String, String>,
+    user_email: Option<String>,
+) -> Response {
     let email_to_show = user_email.as_deref().or(Some(&form.email));
     (
         StatusCode::BAD_REQUEST,

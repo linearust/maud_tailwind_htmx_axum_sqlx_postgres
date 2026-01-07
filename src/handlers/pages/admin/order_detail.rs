@@ -12,8 +12,8 @@ use crate::{
 };
 
 pub async fn get_admin_order_detail(
-    State(db): State<PgPool>,
     State(config): State<AppConfig>,
+    State(db): State<PgPool>,
     Path(order_id): Path<String>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,

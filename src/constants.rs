@@ -37,7 +37,6 @@ pub mod errors {
     pub const PAYMENT_NOT_COMPLETED: &str = "Payment not completed";
     pub const NOT_YOUR_ORDER: &str = "Not your order";
     pub const NO_FILE_PROVIDED: &str = "No file provided";
-    pub const NO_FILE_CONTENT: &str = "No file content";
     pub const FORBIDDEN: &str = "You don't have permission to access this resource";
     pub const CANNOT_REVOKE_OWN_ADMIN: &str = "Cannot revoke your own admin role";
 }

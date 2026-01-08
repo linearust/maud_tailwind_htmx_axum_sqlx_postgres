@@ -1,7 +1,7 @@
 use crate::{
     auth::CurrentUser,
-    flash::FlashMessage,
-    formatting,
+    session::FlashMessage,
+    views::helpers as formatting,
     models::admin::{PaginatedResult, UserListItem},
     paths,
     views::{components::admin::pagination, layout::base::base_layout},

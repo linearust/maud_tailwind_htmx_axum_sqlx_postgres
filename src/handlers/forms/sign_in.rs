@@ -3,14 +3,13 @@ use sqlx::PgPool;
 use validator::Validate;
 
 use crate::{
-    auth::CurrentUser,
+    auth::{self, CurrentUser},
     config::AppConfig,
     constants::messages,
     data::commands,
     email,
-    flash::FlashMessage,
+    session::FlashMessage,
     handlers::errors::HandlerResult,
-    magic_link,
     models::sign_in::{FIELD_EMAIL, MagicLinkRequestForm},
     paths,
     views::pages,
@@ -30,7 +29,7 @@ pub async fn post_forms_sign_in(
         return Ok(render_validation_errors(&current_user, config.site_name(), &form, &validation_errors));
     }
 
-    let token = magic_link::generate_token();
+    let token = auth::generate_token();
     commands::magic_link::create_magic_link(&db, &form.email, &token).await?;
 
     if let Err(e) = email::send_magic_link(config.email(), &form.email, &token).await {

@@ -1,6 +1,6 @@
 use sqlx::PgPool;
 
-use crate::{constants::admin::ROLE_ADMIN, data::errors::DataError, models::UserId};
+use crate::{data::errors::DataError, models::{Role, UserId}};
 
 pub async fn grant_admin_role(
     db: &PgPool,
@@ -14,7 +14,7 @@ pub async fn grant_admin_role(
         ON CONFLICT (user_id, role) DO NOTHING
         "#,
         user_id.as_i32(),
-        ROLE_ADMIN,
+        Role::Admin.as_str(),
         granted_by.as_i32()
     )
     .execute(db)
@@ -30,7 +30,7 @@ pub async fn revoke_admin_role(db: &PgPool, user_id: UserId) -> Result<(), DataE
         WHERE user_id = $1 AND role = $2
         "#,
         user_id.as_i32(),
-        ROLE_ADMIN
+        Role::Admin.as_str()
     )
     .execute(db)
     .await?;

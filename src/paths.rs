@@ -1,20 +1,13 @@
-/// Macro that creates URL path constants with a base prefix.
-///
-/// Generates both absolute paths (prefixed) and relative paths (unprefixed)
-/// for each route, providing flexibility in route composition and registration.
+/// Generates absolute and relative path constants from a base prefix.
 macro_rules! define_nested_routes {
     ($base:expr, { $($name:ident => $path:expr),* $(,)? }) => {
         pub const BASE: &str = $base;
 
-        // Allow unused relative paths - these provide flexibility for future use
-        // and path composition without requiring all paths to be used
         #[allow(dead_code)]
         pub mod relative {
             $(pub const $name: &str = $path;)*
         }
 
-        // Allow unused absolute paths - not all defined routes may be used yet
-        // as this is a template where routes are added as needed
         $(
             #[allow(dead_code)]
             pub const $name: &str = concat!($base, $path);
@@ -87,11 +80,9 @@ pub fn with_page(base: &str, page: i64) -> String {
     with_query_param(base, "page", &page.to_string())
 }
 
-/// Common path builders for frequently used routes
 pub mod helpers {
     use super::*;
-    use uuid::Uuid;
-    use crate::models::UserId;
+    use crate::models::{OrderId, UserId};
 
     pub fn user_detail_path(user_id: UserId) -> String {
         with_param(pages::admin::USER_DETAIL, "user_id", &user_id)
@@ -101,15 +92,15 @@ pub mod helpers {
         with_param(pages::admin::ORDER_DETAIL, "order_id", &order_id)
     }
 
-    pub fn quote_path(order_id: &Uuid) -> String {
-        with_param(pages::QUOTE, "order_id", order_id)
+    pub fn quote_path(order_id: OrderId) -> String {
+        with_param(pages::QUOTE, "order_id", &order_id)
     }
 
-    pub fn checkout_path(order_id: &Uuid) -> String {
-        with_param(pages::CHECKOUT, "order_id", order_id)
+    pub fn checkout_path(order_id: OrderId) -> String {
+        with_param(pages::CHECKOUT, "order_id", &order_id)
     }
 
-    pub fn payment_confirmation_path(order_id: &Uuid) -> String {
-        with_param(pages::PAYMENT_CONFIRMATION, "order_id", order_id)
+    pub fn payment_confirmation_path(order_id: OrderId) -> String {
+        with_param(pages::PAYMENT_CONFIRMATION, "order_id", &order_id)
     }
 }

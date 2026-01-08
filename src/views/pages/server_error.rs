@@ -1,4 +1,4 @@
-use crate::{auth::CurrentUser, flash::FlashMessage, views::layout::base::base_layout};
+use crate::{auth::CurrentUser, session::FlashMessage, views::layout::base::base_layout};
 use maud::{Markup, html};
 
 pub fn server_error(current_user: &CurrentUser, flash: Option<&FlashMessage>, site_name: &str, message: &str) -> Markup {

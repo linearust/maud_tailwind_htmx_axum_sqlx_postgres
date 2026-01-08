@@ -1,9 +1,8 @@
 use sqlx::PgPool;
-use uuid::Uuid;
 
-use crate::{constants::errors, data::errors::DataError, models::{order::{Order, OrderSummary}, UserId}};
+use crate::{constants::errors, data::errors::DataError, models::{OrderId, order::{Order, OrderSummary}, UserId}};
 
-pub async fn get_order(db: &PgPool, order_id: Uuid) -> Result<Option<Order>, DataError> {
+pub async fn get_order(db: &PgPool, order_id: OrderId) -> Result<Option<Order>, DataError> {
     let order = sqlx::query_as!(
         Order,
         r#"
@@ -24,7 +23,7 @@ pub async fn get_order(db: &PgPool, order_id: Uuid) -> Result<Option<Order>, Dat
         FROM orders
         WHERE order_id = $1
         "#,
-        order_id
+        order_id.as_uuid()
     )
     .fetch_optional(db)
     .await?;
@@ -94,7 +93,7 @@ pub async fn get_orders_for_user(
 
 pub async fn get_order_for_user(
     db: &PgPool,
-    order_id: Uuid,
+    order_id: OrderId,
     user_id: UserId,
 ) -> Result<Order, DataError> {
     let order = get_order(db, order_id)

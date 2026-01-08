@@ -1,4 +1,4 @@
-use crate::{formatting, models::admin::OrderListItem, paths};
+use crate::{views::helpers as formatting, models::admin::OrderListItem, paths};
 use maud::{html, Markup};
 
 pub fn order_row(order: &OrderListItem, show_user: bool) -> Markup {

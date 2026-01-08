@@ -4,7 +4,8 @@ use lettre::{
     Message, SmtpTransport, Transport,
 };
 
-use crate::{email_templates, paths};
+use super::templates;
+use crate::paths;
 
 #[derive(Debug, thiserror::Error)]
 pub enum EmailError {
@@ -114,7 +115,7 @@ pub async fn send_magic_link(
         .to(to_mailbox)
         .subject("Sign in to your account")
         .header(ContentType::TEXT_HTML)
-        .body(email_templates::magic_link_sign_in(&magic_link))?;
+        .body(templates::magic_link_sign_in(&magic_link))?;
 
     match &config.mode {
         EmailMode::Console => {
@@ -146,7 +147,7 @@ pub async fn send_contact_inquiry(
         .to(to_mailbox)
         .subject("New Contact Inquiry")
         .header(ContentType::TEXT_HTML)
-        .body(email_templates::contact_inquiry(from_email, message))?;
+        .body(templates::contact_inquiry(from_email, message))?;
 
     match &config.mode {
         EmailMode::Console => {

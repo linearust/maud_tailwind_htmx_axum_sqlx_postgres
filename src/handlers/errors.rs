@@ -6,12 +6,9 @@ use thiserror::Error;
 
 use crate::{auth::CurrentUser, constants::error_pages, data::errors::DataError, views::pages};
 
-/// Type alias for handler results, defaulting to Response.
 pub type HandlerResult<T = Response> = Result<T, HandlerError>;
 
-/// Handler-level errors that can occur during request processing.
-///
-/// Wraps lower-level errors and provides consistent HTTP responses via `IntoResponse`.
+/// Wraps data/session errors and converts them to HTTP responses.
 #[derive(Error, Debug)]
 pub enum HandlerError {
     #[error("{0}")]

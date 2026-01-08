@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-use crate::{constants::errors, data::errors::DataError, models::UserId};
+use crate::{constants::errors, data::errors::DataError, models::{OrderId, UserId}};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "text", rename_all = "lowercase")]
@@ -45,7 +45,7 @@ impl PaymentStatus {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Order {
-    pub order_id: Uuid,
+    pub order_id: OrderId,
     pub user_id: UserId,
     pub user_email: String,
     pub filename: String,
@@ -81,7 +81,7 @@ impl Order {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrderSummary {
-    pub order_id: Uuid,
+    pub order_id: OrderId,
     pub filename: String,
     pub file_size: i32,
     pub text_length: i32,

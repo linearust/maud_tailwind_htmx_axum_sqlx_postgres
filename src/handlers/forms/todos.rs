@@ -8,7 +8,7 @@ use crate::{
     config::AppConfig,
     constants::messages,
     data::{commands, queries},
-    flash::FlashMessage,
+    session::FlashMessage,
     handlers::errors::HandlerResult,
     models::{todo::{CreateTodoForm, FIELD_TASK}, UserId},
     paths::pages,
@@ -45,7 +45,7 @@ async fn render_validation_errors(
     validation_errors: &validator::ValidationErrors,
 ) -> HandlerResult {
     let errors = parse_validation_errors(validation_errors);
-    let todos_list = queries::todo::get_todos_for_user(db, user_id).await?;
+    let todos = queries::todo::get_todos_for_user(db, user_id).await?;
 
     Ok((
         StatusCode::BAD_REQUEST,
@@ -53,7 +53,7 @@ async fn render_validation_errors(
             current_user,
             None,
             site_name,
-            todos_list,
+            todos,
             Some(&form.task),
             errors.get(FIELD_TASK).map(String::as_str),
         ),

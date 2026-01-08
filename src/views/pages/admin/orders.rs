@@ -1,6 +1,6 @@
 use crate::{
     auth::CurrentUser,
-    flash::FlashMessage,
+    session::FlashMessage,
     models::admin::{OrderListItem, PaginatedResult},
     models::order::PaymentStatus,
     paths,

@@ -1,9 +1,6 @@
 use thiserror::Error;
 
-/// Errors at the data access layer.
-///
-/// Separates low-level database errors from application-level semantic errors
-/// (not found, unauthorized) for clearer error handling in handlers.
+/// Separates DB errors from semantic errors (not found, unauthorized).
 #[derive(Error, Debug)]
 pub enum DataError {
     #[error("Database error")]

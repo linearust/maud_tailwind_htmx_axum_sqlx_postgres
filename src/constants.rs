@@ -3,6 +3,16 @@ pub mod auth {
     pub const SESSION_EXPIRY_DAYS: i64 = 1;
 }
 
+pub mod validation {
+    use regex::Regex;
+    use std::sync::LazyLock;
+
+    pub static EMAIL_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+            .expect("Email regex pattern is invalid")
+    });
+}
+
 pub mod cdn {
     pub const TAILWIND_CSS_URL: &str = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4";
     pub const HTMX_URL: &str = "https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js";
@@ -61,5 +71,4 @@ pub mod logging {
 
 pub mod admin {
     pub const ITEMS_PER_PAGE: i64 = 20;
-    pub const ROLE_ADMIN: &str = "admin";
 }

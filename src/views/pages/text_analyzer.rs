@@ -1,4 +1,4 @@
-use crate::{auth::CurrentUser, flash::FlashMessage, paths, views::layout::base::base_layout};
+use crate::{auth::CurrentUser, session::FlashMessage, paths, views::layout::base::base_layout};
 use maud::{Markup, html};
 
 pub fn text_analyzer(

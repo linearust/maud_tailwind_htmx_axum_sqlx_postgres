@@ -7,7 +7,7 @@ use crate::{
     config::AppConfig,
     constants::admin::ITEMS_PER_PAGE,
     data::queries::admin,
-    flash::FlashMessage,
+    session::FlashMessage,
     handlers::errors::HandlerError,
     models::{pagination::PaginationQuery, admin::PaginatedResult, UserId},
     views::pages::admin as admin_views,

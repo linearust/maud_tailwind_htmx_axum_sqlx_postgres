@@ -1,6 +1,6 @@
 use maud::{html, Markup};
 
-use crate::flash::{FlashKind, FlashMessage};
+use crate::session::{FlashKind, FlashMessage};
 
 pub fn flash(message: Option<&FlashMessage>) -> Markup {
     match message {

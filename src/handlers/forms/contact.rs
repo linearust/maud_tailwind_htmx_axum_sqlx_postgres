@@ -11,7 +11,7 @@ use crate::{
     constants::messages,
     data::queries,
     email,
-    flash::FlashMessage,
+    session::FlashMessage,
     handlers::errors::HandlerResult,
     models::contact::{ContactForm, FIELD_EMAIL, FIELD_MESSAGE},
     paths,
@@ -35,7 +35,7 @@ pub async fn post_forms_contact(
             CurrentUser::Authenticated { email, .. } => Some(email.clone()),
             CurrentUser::Guest => None,
         };
-        return Ok(render_with_errors(&current_user, config.site_name(), &form, errors, user_email));
+        return Ok(render_validation_errors(&current_user, config.site_name(), &form, errors, user_email));
     }
 
     let email_to_use = match &current_user {
@@ -47,7 +47,7 @@ pub async fn post_forms_contact(
         CurrentUser::Guest => {
             if let Err(validation_errors) = form.validate() {
                 let errors = parse_validation_errors(&validation_errors);
-                return Ok(render_with_errors(&current_user, config.site_name(), &form, errors, None));
+                return Ok(render_validation_errors(&current_user, config.site_name(), &form, errors, None));
             }
             form.email.clone()
         }
@@ -65,7 +65,7 @@ pub async fn post_forms_contact(
         .await?)
 }
 
-fn render_with_errors(
+fn render_validation_errors(
     current_user: &CurrentUser,
     site_name: &str,
     form: &ContactForm,

@@ -1,4 +1,4 @@
-use crate::{auth::CurrentUser, flash::FlashMessage, formatting::format_price, models::order::Order, paths, views::layout::base::base_layout};
+use crate::{auth::CurrentUser, session::FlashMessage, views::helpers::format_price, models::order::Order, paths, views::layout::base::base_layout};
 use maud::{Markup, html};
 
 pub fn quote(

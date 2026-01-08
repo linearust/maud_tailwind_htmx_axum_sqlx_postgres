@@ -4,7 +4,7 @@ use maud::Markup;
 use crate::{
     auth::CurrentUser,
     config::AppConfig,
-    flash::FlashMessage,
+    session::FlashMessage,
     handlers::errors::HandlerError,
     views::pages,
 };

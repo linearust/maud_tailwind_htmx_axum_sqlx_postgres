@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use validator::Validate;
 
-use crate::validation::EMAIL_REGEX;
+use crate::constants::validation::EMAIL_REGEX;
 
 pub const FIELD_EMAIL: &str = "email";
 pub const FIELD_MESSAGE: &str = "message";

@@ -7,7 +7,7 @@ use crate::{
     auth::SESSION_USER_ID_KEY,
     constants::messages,
     data::commands,
-    flash::FlashMessage,
+    session::FlashMessage,
     handlers::errors::HandlerResult,
     paths,
 };

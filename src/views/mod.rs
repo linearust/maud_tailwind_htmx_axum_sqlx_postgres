@@ -1,6 +1,7 @@
-//! Maud HTML templates organized by composition level:
-//! layout (base structure), components (reusable elements), and pages (full views).
+//! Maud templates: layout, components, pages.
 
 pub mod components;
+pub mod helpers;
 pub mod layout;
 pub mod pages;
+pub mod response;

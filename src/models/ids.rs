@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// Strongly-typed user identifier.
 ///
@@ -9,15 +10,11 @@ use serde::{Deserialize, Serialize};
 pub struct UserId(i32);
 
 impl UserId {
-    /// Creates a new UserId from a raw database value.
-    ///
-    /// This should only be called when reading from the database or session.
-    /// For new users, the database generates the ID.
+    /// Only call when reading from database or session — DB generates IDs for new users.
     pub fn from_db(id: i32) -> Self {
         Self(id)
     }
 
-    /// Returns the inner value for database operations.
     pub fn as_i32(self) -> i32 {
         self.0
     }
@@ -41,15 +38,11 @@ impl From<i32> for UserId {
 pub struct TodoId(i32);
 
 impl TodoId {
-    /// Creates a new TodoId from a raw database value.
-    ///
-    /// This should only be called when reading from the database.
-    /// For new todos, the database generates the ID.
+    /// Only call when reading from database — DB generates IDs for new todos.
     pub fn from_db(id: i32) -> Self {
         Self(id)
     }
 
-    /// Returns the inner value for database operations.
     pub fn as_i32(self) -> i32 {
         self.0
     }
@@ -63,6 +56,39 @@ impl std::fmt::Display for TodoId {
 
 impl From<i32> for TodoId {
     fn from(id: i32) -> Self {
+        Self(id)
+    }
+}
+
+/// Strongly-typed order identifier.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(transparent)]
+pub struct OrderId(Uuid);
+
+impl OrderId {
+    #[allow(dead_code)]
+    pub fn from_db(id: Uuid) -> Self {
+        Self(id)
+    }
+
+    pub fn as_uuid(self) -> Uuid {
+        self.0
+    }
+
+    #[allow(dead_code)]
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Uuid::parse_str(s).map(Self)
+    }
+}
+
+impl std::fmt::Display for OrderId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<Uuid> for OrderId {
+    fn from(id: Uuid) -> Self {
         Self(id)
     }
 }

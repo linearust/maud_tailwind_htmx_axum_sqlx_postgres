@@ -1,7 +1,7 @@
 use crate::{
     auth::CurrentUser,
-    flash::FlashMessage,
-    formatting,
+    session::FlashMessage,
+    views::helpers as formatting,
     models::order::OrderSummary,
     paths,
     views::layout::base::base_layout,
@@ -53,7 +53,7 @@ fn order_row(order: &OrderSummary) -> Markup {
     html! {
         tr class="border-b" {
             td class="py-2 px-2" {
-                a href=(paths::helpers::quote_path(&order.order_id))
+                a href=(paths::helpers::quote_path(order.order_id))
                     class="text-indigo-600 hover:underline"
                 {
                     (order.order_number)

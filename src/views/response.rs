@@ -1,5 +1,3 @@
-//! HTMX response helpers for consistent interaction patterns.
-
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},

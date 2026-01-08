@@ -6,7 +6,7 @@ use crate::{
     auth::CurrentUser,
     constants::{errors, messages},
     data::commands::admin,
-    flash::FlashMessage,
+    session::FlashMessage,
     handlers::errors::HandlerResult,
     models::UserId,
     paths::helpers,

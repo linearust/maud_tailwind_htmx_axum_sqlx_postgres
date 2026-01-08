@@ -2,22 +2,21 @@ use axum::{Extension, Form, extract::{Query, State}, response::{IntoResponse, Re
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use tower_sessions::Session;
-use uuid::Uuid;
 
 use crate::{
     auth::CurrentUser,
     config::AppConfig,
     constants::messages,
     data::{commands, queries},
-    flash::FlashMessage,
+    session::FlashMessage,
     handlers::errors::HandlerResult,
-    models::order::PaymentStatus,
+    models::{OrderId, order::PaymentStatus},
     paths,
 };
 
 #[derive(Deserialize)]
 pub struct PaymentInitiateForm {
-    order_id: Uuid,
+    order_id: OrderId,
 }
 
 pub async fn post_actions_payment_initiate(
@@ -32,11 +31,11 @@ pub async fn post_actions_payment_initiate(
 
     if !matches!(order.payment_status, PaymentStatus::Pending) {
         return Ok(FlashMessage::error(messages::ORDER_ALREADY_PROCESSED)
-            .set_and_redirect(&session, &paths::helpers::quote_path(&order.order_id))
+            .set_and_redirect(&session, &paths::helpers::quote_path(order.order_id))
             .await?);
     }
 
-    let checkout_url = paths::helpers::checkout_path(&order.order_id);
+    let checkout_url = paths::helpers::checkout_path(order.order_id);
     Ok(Redirect::to(&checkout_url).into_response())
 }
 
@@ -76,7 +75,13 @@ async fn confirm_payment_with_toss(secret_key: &str, query: &PaymentVerifyQuery)
     match response {
         Ok(resp) if resp.status().is_success() => PaymentStatus::Paid,
         Ok(resp) => {
-            let error_body = resp.text().await.unwrap_or("Unknown error".to_string());
+            let error_body = match resp.text().await {
+                Ok(body) => body,
+                Err(e) => {
+                    tracing::error!("Failed to decode Toss API error response: {}", e);
+                    "Failed to decode response".to_string()
+                }
+            };
             tracing::error!("Toss payment confirmation failed: {}", error_body);
             PaymentStatus::Failed
         }
@@ -87,7 +92,7 @@ async fn confirm_payment_with_toss(secret_key: &str, query: &PaymentVerifyQuery)
     }
 }
 
-async fn redirect_with_error(session: &Session, order_id: &uuid::Uuid) -> HandlerResult {
+async fn redirect_with_error(session: &Session, order_id: OrderId) -> HandlerResult {
     Ok(FlashMessage::error(messages::PAYMENT_FAILED)
         .set_and_redirect(session, &paths::helpers::quote_path(order_id))
         .await?)
@@ -105,7 +110,7 @@ pub async fn get_actions_payment_verify(
 
     if query.amount != order.price_amount {
         tracing::error!("Payment amount mismatch: expected {}, got {}", order.price_amount, query.amount);
-        return redirect_with_error(&session, &order.order_id).await;
+        return redirect_with_error(&session, order.order_id).await;
     }
 
     let status = confirm_payment_with_toss(config.payment().toss_secret_key(), &query).await;
@@ -115,9 +120,9 @@ pub async fn get_actions_payment_verify(
     match status {
         PaymentStatus::Paid => {
             Ok(FlashMessage::success(messages::PAYMENT_SUCCESS)
-                .set_and_redirect(&session, &paths::helpers::payment_confirmation_path(&order.order_id))
+                .set_and_redirect(&session, &paths::helpers::payment_confirmation_path(order.order_id))
                 .await?)
         }
-        _ => redirect_with_error(&session, &order.order_id).await,
+        _ => redirect_with_error(&session, order.order_id).await,
     }
 }

@@ -7,18 +7,40 @@ pub fn input(
     value: Option<&str>,
     error: Option<&str>,
 ) -> Markup {
-    let input_class = if error.is_some() {
-        "w-full px-3 py-2 border border-red-500 focus:outline-none focus:border-red-600"
-    } else {
-        "w-full px-3 py-2 border focus:outline-none focus:border-indigo-600"
+    input_with_label(input_type, name, None, placeholder, value, error, false)
+}
+
+pub fn input_with_label(
+    input_type: &str,
+    name: &str,
+    label: Option<&str>,
+    placeholder: &str,
+    value: Option<&str>,
+    error: Option<&str>,
+    readonly: bool,
+) -> Markup {
+    let input_class = match (error.is_some(), readonly) {
+        (true, _) => "w-full px-3 py-2 border border-red-500 focus:outline-none focus:border-red-600",
+        (false, true) => "w-full px-3 py-2 border bg-gray-50 cursor-not-allowed",
+        (false, false) => "w-full px-3 py-2 border focus:outline-none focus:border-indigo-600",
     };
 
     html! {
         div {
-            input type=(input_type) name=(name) required
-                class=(input_class)
-                placeholder=(placeholder)
-                value=[value];
+            @if let Some(label_text) = label {
+                label for=(name) class="block text-sm mb-1" { (label_text) }
+            }
+            @if readonly {
+                input type=(input_type) name=(name) id=(name) readonly
+                    class=(input_class)
+                    placeholder=(placeholder)
+                    value=[value];
+            } @else {
+                input type=(input_type) name=(name) id=(name) required
+                    class=(input_class)
+                    placeholder=(placeholder)
+                    value=[value];
+            }
 
             @if let Some(error_msg) = error {
                 p class="mt-1 text-sm text-red-600" { (error_msg) }

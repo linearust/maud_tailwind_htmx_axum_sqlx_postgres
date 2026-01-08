@@ -1,7 +1,7 @@
 use axum::{Extension, extract::State, http::StatusCode};
 use maud::Markup;
 
-use crate::{auth::CurrentUser, config::AppConfig, flash::FlashMessage, views::pages};
+use crate::{auth::CurrentUser, config::AppConfig, session::FlashMessage, views::pages};
 
 pub async fn handle_404(
     State(config): State<AppConfig>,

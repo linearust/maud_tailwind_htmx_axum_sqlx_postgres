@@ -1,7 +1,3 @@
-//! Email template functions.
-//!
-//! Separates presentation (HTML templates) from business logic (email sending).
-
 use crate::constants::auth::MAGIC_LINK_EXPIRY_MINUTES;
 
 pub fn magic_link_sign_in(magic_link: &str) -> String {

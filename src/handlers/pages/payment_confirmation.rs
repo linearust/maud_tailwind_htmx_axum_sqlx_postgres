@@ -1,16 +1,15 @@
 use axum::{Extension, extract::{Path, State}};
 use maud::Markup;
 use sqlx::PgPool;
-use uuid::Uuid;
 
 use crate::{
     auth::CurrentUser,
     config::AppConfig,
     constants::errors,
     data::{errors::DataError, queries},
-    flash::FlashMessage,
+    session::FlashMessage,
     handlers::errors::HandlerError,
-    models::order::PaymentStatus,
+    models::{OrderId, order::PaymentStatus},
     views::pages,
 };
 
@@ -19,7 +18,7 @@ pub async fn get_payment_confirmation(
     State(db): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
-    Path(order_id): Path<Uuid>,
+    Path(order_id): Path<OrderId>,
 ) -> Result<Markup, HandlerError> {
     let user_id = current_user.require_authenticated();
 

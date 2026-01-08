@@ -1,7 +1,4 @@
-//! Axum middleware for request/response processing.
-//!
-//! Middleware ordering is critical - see routes/mod.rs for layer application sequence
-//! and auth.rs for safety considerations around authentication enforcement.
+//! Middleware ordering is critical — see routes/mod.rs and auth.rs.
 
 mod auth;
 mod http_tracing;

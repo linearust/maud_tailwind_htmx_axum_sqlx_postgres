@@ -1,7 +1,6 @@
 use sqlx::PgPool;
-use uuid::Uuid;
 
-use crate::{data::errors::DataError, models::{order::{Order, PaymentStatus}, UserId}};
+use crate::{data::errors::DataError, models::{OrderId, order::{Order, PaymentStatus}, UserId}};
 
 pub struct CreateOrderParams {
     pub user_id: UserId,
@@ -53,7 +52,7 @@ pub async fn create_order(db: &PgPool, params: CreateOrderParams) -> Result<Orde
 
 pub async fn update_order_payment(
     db: &PgPool,
-    order_id: Uuid,
+    order_id: OrderId,
     payment_key: &str,
     payment_status: PaymentStatus,
 ) -> Result<Order, DataError> {
@@ -62,7 +61,7 @@ pub async fn update_order_payment(
         r#"
         UPDATE orders
         SET payment_key = $2, payment_status = $3, paid_at = CASE WHEN $3 = 'paid' THEN NOW() ELSE paid_at END
-        WHERE order_id = $1
+        WHERE order_id = $1 AND payment_status = 'pending'
         RETURNING
             order_id,
             user_id,
@@ -78,7 +77,7 @@ pub async fn update_order_payment(
             created_at,
             paid_at
         "#,
-        order_id,
+        order_id.as_uuid(),
         payment_key,
         payment_status as PaymentStatus
     )

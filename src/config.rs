@@ -101,12 +101,12 @@ impl AppConfig {
 
 #[derive(Clone, FromRef)]
 pub struct AppState {
-    db: PgPool,
+    database: PgPool,
     config: AppConfig,
 }
 
 impl AppState {
-    pub fn new(db: PgPool, config: AppConfig) -> Self {
-        Self { db, config }
+    pub fn new(database: PgPool, config: AppConfig) -> Self {
+        Self { database, config }
     }
 }

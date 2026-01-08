@@ -6,7 +6,7 @@ use crate::{
     auth::CurrentUser,
     config::AppConfig,
     data::queries,
-    flash::FlashMessage,
+    session::FlashMessage,
     handlers::errors::HandlerError,
     views::pages,
 };

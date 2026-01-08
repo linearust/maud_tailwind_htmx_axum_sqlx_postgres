@@ -6,7 +6,7 @@ use axum::{
 };
 use tower_sessions::Session;
 
-use crate::{auth::CurrentUser, constants::messages, flash::FlashMessage, paths};
+use crate::{auth::CurrentUser, constants::messages, session::FlashMessage, paths};
 
 pub async fn require_authentication(req: Request, next: Next) -> axum::response::Response {
     match req.extensions().get::<CurrentUser>() {

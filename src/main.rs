@@ -1,24 +1,17 @@
-//! Web application template with type-first routing architecture.
-//!
-//! Routes are organized by interaction type rather than resource,
-//! enabling clear separation between views, form submissions, and state changes.
+//! Routes organized by interaction type (pages, forms, actions).
 
 mod auth;
 mod config;
 mod constants;
 mod data;
 mod email;
-mod email_templates;
-mod flash;
-mod formatting;
 mod handlers;
 mod init;
-mod magic_link;
 mod middlewares;
 mod models;
 mod paths;
 mod routes;
-mod validation;
+mod session;
 mod views;
 
 use config::{AppConfig, AppState};

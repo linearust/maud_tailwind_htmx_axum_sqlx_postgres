@@ -1,5 +1,5 @@
 use super::navigation;
-use crate::{auth::CurrentUser, constants::cdn, flash::FlashMessage, paths, views::components};
+use crate::{auth::CurrentUser, constants::cdn, session::FlashMessage, paths, views::components};
 use maud::{html, Markup, DOCTYPE};
 
 pub fn base_layout(current_user: &CurrentUser, flash: Option<&FlashMessage>, site_name: &str, title: &str, meta_description: &str, content: Markup) -> Markup {

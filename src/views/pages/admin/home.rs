@@ -1,7 +1,7 @@
 use crate::{
     auth::CurrentUser,
-    flash::FlashMessage,
-    formatting,
+    session::FlashMessage,
+    views::helpers as formatting,
     models::admin::AdminStats,
     paths,
     views::{components::admin::stats_card, layout::base::base_layout},

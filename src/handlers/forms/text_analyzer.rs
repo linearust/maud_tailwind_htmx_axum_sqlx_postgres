@@ -5,7 +5,7 @@ use crate::{
     auth::CurrentUser,
     constants::{errors, file_upload, pricing},
     data::{commands, errors::DataError},
-    flash::FlashMessage,
+    session::FlashMessage,
     handlers::errors::HandlerResult,
     models::order::Order,
     paths,
@@ -28,7 +28,14 @@ async fn parse_file_upload(mut multipart: Multipart) -> Result<ParseResult, Data
         tracing::error!("Multipart error: {}", e);
         DataError::InvalidInput(format!("Failed to process multipart data: {}", e))
     })? {
-        if field.name().unwrap_or("") != "file" {
+        let field_name = match field.name() {
+            Some(name) => name,
+            None => {
+                tracing::warn!("Multipart field without name, skipping");
+                continue;
+            }
+        };
+        if field_name != "file" {
             continue;
         }
 
@@ -97,5 +104,5 @@ pub async fn post_forms_text_analyzer(
         },
     ).await?;
 
-    Ok(Redirect::to(&paths::helpers::quote_path(&order.order_id)).into_response())
+    Ok(Redirect::to(&paths::helpers::quote_path(order.order_id)).into_response())
 }

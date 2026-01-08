@@ -1,5 +1,3 @@
-//! Application initialization functions.
-
 mod database;
 mod logging;
 mod session;

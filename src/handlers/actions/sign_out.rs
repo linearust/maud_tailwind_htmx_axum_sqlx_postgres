@@ -1,6 +1,6 @@
 use tower_sessions::Session;
 
-use crate::{constants::messages, flash::FlashMessage, handlers::errors::HandlerResult, paths};
+use crate::{constants::messages, session::FlashMessage, handlers::errors::HandlerResult, paths};
 
 pub async fn post_actions_sign_out(session: Session) -> HandlerResult {
     session.flush().await?;

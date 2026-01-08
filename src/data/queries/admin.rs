@@ -5,7 +5,8 @@ use crate::{
     models::{
         admin::{AdminStats, UserListItem, UserDetail, OrderListItem, OrderDetail},
         order::PaymentStatus,
-        UserId,
+        pagination,
+        OrderId, UserId,
     },
 };
 
@@ -35,7 +36,7 @@ pub async fn get_users_paginated(
     page: i64,
     per_page: i64,
 ) -> Result<Vec<UserListItem>, DataError> {
-    let offset = (page - 1) * per_page;
+    let offset = pagination::offset(page, per_page);
 
     let results = sqlx::query!(
         r#"
@@ -120,13 +121,13 @@ pub async fn get_user_orders(
     page: i64,
     per_page: i64,
 ) -> Result<Vec<OrderListItem>, DataError> {
-    let offset = (page - 1) * per_page;
+    let offset = pagination::offset(page, per_page);
 
     sqlx::query_as!(
         OrderListItem,
         r#"
         SELECT
-            order_id::text as "order_id!",
+            order_id as "order_id: OrderId",
             order_number,
             user_email,
             price_amount,
@@ -167,7 +168,7 @@ pub async fn get_orders_paginated(
     page: i64,
     per_page: i64,
 ) -> Result<Vec<OrderListItem>, DataError> {
-    let offset = (page - 1) * per_page;
+    let offset = pagination::offset(page, per_page);
 
     let result = match status_filter {
         Some(status) => {
@@ -175,7 +176,7 @@ pub async fn get_orders_paginated(
                 OrderListItem,
                 r#"
                 SELECT
-                    order_id::text as "order_id!",
+                    order_id as "order_id: OrderId",
                     order_number,
                     user_email,
                     price_amount,
@@ -198,7 +199,7 @@ pub async fn get_orders_paginated(
                 OrderListItem,
                 r#"
                 SELECT
-                    order_id::text as "order_id!",
+                    order_id as "order_id: OrderId",
                     order_number,
                     user_email,
                     price_amount,
@@ -253,15 +254,12 @@ pub async fn get_total_order_count(
     }
 }
 
-pub async fn get_order_detail(db: &PgPool, order_id: &str) -> Result<OrderDetail, DataError> {
-    let uuid_order_id = sqlx::types::Uuid::parse_str(order_id)
-        .map_err(|_| DataError::NotFound("Invalid order ID format"))?;
-
+pub async fn get_order_detail(db: &PgPool, order_id: OrderId) -> Result<OrderDetail, DataError> {
     sqlx::query_as!(
         OrderDetail,
         r#"
         SELECT
-            order_id::text as "order_id!",
+            order_id as "order_id: OrderId",
             order_number,
             user_id,
             user_email,
@@ -275,7 +273,7 @@ pub async fn get_order_detail(db: &PgPool, order_id: &str) -> Result<OrderDetail
         FROM orders
         WHERE order_id = $1
         "#,
-        uuid_order_id
+        order_id.as_uuid()
     )
     .fetch_one(db)
     .await

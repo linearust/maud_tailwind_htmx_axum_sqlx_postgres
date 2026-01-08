@@ -4,8 +4,8 @@ use maud::Markup;
 use crate::{
     auth::CurrentUser,
     config::AppConfig,
-    session::FlashMessage,
     handlers::errors::HandlerError,
+    session::FlashMessage,
     views::pages,
 };
 

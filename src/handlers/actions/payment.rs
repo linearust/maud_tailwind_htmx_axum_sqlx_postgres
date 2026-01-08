@@ -49,7 +49,7 @@ pub struct PaymentVerifyQuery {
 }
 
 #[derive(Serialize)]
-struct TossConfirmRequest {
+struct TossPaymentConfirmationRequest {
     #[serde(rename = "paymentKey")]
     payment_key: String,
     #[serde(rename = "orderId")]
@@ -59,7 +59,7 @@ struct TossConfirmRequest {
 
 
 async fn confirm_payment_with_toss(secret_key: &str, query: &PaymentVerifyQuery) -> PaymentStatus {
-    let confirm_request = TossConfirmRequest {
+    let confirm_request = TossPaymentConfirmationRequest {
         payment_key: query.payment_key.clone(),
         order_id: query.order_id.clone(),
         amount: query.amount,

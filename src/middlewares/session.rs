@@ -11,8 +11,8 @@ pub async fn session_context(
     next: Next,
 ) -> axum::response::Response {
     let current_user = match session.get::<i32>(SESSION_USER_ID_KEY).await {
-        Ok(Some(user_id_param)) => {
-            let user_id = UserId::from_db(user_id_param);
+        Ok(Some(session_user_id)) => {
+            let user_id = UserId::from_db(session_user_id);
             match queries::user::get_user_info(&db, user_id).await {
                 Ok(Some(info)) => CurrentUser::Authenticated {
                     user_id,
@@ -20,7 +20,7 @@ pub async fn session_context(
                     is_admin: info.is_admin,
                 },
                 Ok(None) => {
-                    tracing::warn!("User ID {} in session but not found in database", user_id_param);
+                    tracing::warn!("User ID {} in session but not found in database", session_user_id);
                     CurrentUser::Guest
                 }
                 Err(e) => {

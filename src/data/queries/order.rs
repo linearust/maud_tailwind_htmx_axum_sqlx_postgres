@@ -99,7 +99,9 @@ pub async fn get_order_for_user(
     let order = get_order(db, order_id)
         .await?
         .ok_or(DataError::NotFound(errors::ORDER_NOT_FOUND))?;
-    order.verify_ownership(user_id)?;
+    if order.user_id != user_id {
+        return Err(DataError::Unauthorized(errors::NOT_YOUR_ORDER));
+    }
     Ok(order)
 }
 
@@ -111,6 +113,8 @@ pub async fn get_order_by_order_number_for_user(
     let order = get_order_by_order_number(db, order_number)
         .await?
         .ok_or(DataError::NotFound(errors::ORDER_NOT_FOUND))?;
-    order.verify_ownership(user_id)?;
+    if order.user_id != user_id {
+        return Err(DataError::Unauthorized(errors::NOT_YOUR_ORDER));
+    }
     Ok(order)
 }

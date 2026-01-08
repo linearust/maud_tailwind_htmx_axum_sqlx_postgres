@@ -4,6 +4,11 @@ pub fn default_page() -> i64 {
     1
 }
 
+/// Calculate SQL OFFSET from page number (1-indexed).
+pub fn offset(page: i64, per_page: i64) -> i64 {
+    (page - 1) * per_page
+}
+
 #[derive(Deserialize)]
 pub struct PaginationQuery {
     #[serde(default = "default_page")]

@@ -8,17 +8,18 @@ use crate::{
     data::queries::admin,
     session::FlashMessage,
     handlers::errors::HandlerError,
+    models::OrderId,
     views::pages::admin as admin_views,
 };
 
 pub async fn get_admin_order_detail(
     State(config): State<AppConfig>,
     State(db): State<PgPool>,
-    Path(order_id): Path<String>,
+    Path(order_id): Path<OrderId>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
 ) -> Result<Markup, HandlerError> {
-    let order = admin::get_order_detail(&db, &order_id).await?;
+    let order = admin::get_order_detail(&db, order_id).await?;
 
     Ok(admin_views::order_detail(
         &current_user,

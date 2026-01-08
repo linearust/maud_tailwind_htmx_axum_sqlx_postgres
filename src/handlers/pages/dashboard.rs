@@ -1,15 +1,15 @@
 use axum::{Extension, extract::State};
+use maud::Markup;
 use sqlx::PgPool;
 
 use crate::{
     auth::CurrentUser,
     config::AppConfig,
     data::queries,
-    session::FlashMessage,
     handlers::errors::HandlerError,
+    session::FlashMessage,
     views::pages,
 };
-use maud::Markup;
 
 pub async fn get_dashboard(
     State(config): State<AppConfig>,

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-use crate::{constants::errors, data::errors::DataError, models::{OrderId, UserId}};
+use crate::models::{OrderId, UserId};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "text", rename_all = "lowercase")]
@@ -61,14 +61,6 @@ pub struct Order {
 }
 
 impl Order {
-    pub fn verify_ownership(&self, user_id: UserId) -> Result<(), DataError> {
-        if self.user_id != user_id {
-            Err(DataError::Unauthorized(errors::NOT_YOUR_ORDER))
-        } else {
-            Ok(())
-        }
-    }
-
     pub fn generate_order_number(user_id: UserId) -> String {
         let uuid_string = Uuid::new_v4().to_string();
         let uuid_prefix = uuid_string

@@ -1,5 +1,6 @@
 use axum::{Extension, Form, extract::State, http::StatusCode, response::{IntoResponse, Response}};
 use sqlx::PgPool;
+use tower_sessions::Session;
 use validator::Validate;
 
 use crate::{
@@ -8,13 +9,12 @@ use crate::{
     constants::messages,
     data::commands,
     email,
-    session::FlashMessage,
     handlers::errors::HandlerResult,
     models::sign_in::{FIELD_EMAIL, MagicLinkRequestForm},
     paths,
+    session::FlashMessage,
     views::pages,
 };
-use tower_sessions::Session;
 
 use super::parse_validation_errors;
 

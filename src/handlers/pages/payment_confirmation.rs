@@ -7,9 +7,9 @@ use crate::{
     config::AppConfig,
     constants::errors,
     data::{errors::DataError, queries},
-    session::FlashMessage,
     handlers::errors::HandlerError,
-    models::{OrderId, order::PaymentStatus},
+    models::{order::PaymentStatus, OrderId},
+    session::FlashMessage,
     views::pages,
 };
 

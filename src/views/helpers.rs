@@ -12,8 +12,8 @@ pub fn format_price(amount: i32) -> String {
         .join(",")
 }
 
-pub fn format_datetime(dt: OffsetDateTime) -> String {
-    let formatted = match dt.format(&Rfc3339) {
+pub fn format_datetime(datetime: OffsetDateTime) -> String {
+    let formatted = match datetime.format(&Rfc3339) {
         Ok(s) => s,
         Err(e) => {
             tracing::error!(error = %e, "Failed to format datetime as RFC3339");

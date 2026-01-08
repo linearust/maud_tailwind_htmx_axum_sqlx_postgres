@@ -1,5 +1,13 @@
-use crate::{auth::CurrentUser, constants::{cdn, payment}, session::FlashMessage, views::helpers::format_price, models::order::Order, paths, views::layout::base};
-use maud::{Markup, PreEscaped, html};
+use maud::{html, Markup, PreEscaped};
+
+use crate::{
+    auth::CurrentUser,
+    constants::{cdn, payment},
+    models::order::Order,
+    paths,
+    session::FlashMessage,
+    views::{helpers::format_price, layout::base},
+};
 
 fn toss_payment_script(client_key: &str, order: &Order, success_url: &str, fail_url: &str) -> Markup {
     html! {

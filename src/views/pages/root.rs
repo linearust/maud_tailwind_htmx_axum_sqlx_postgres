@@ -1,10 +1,11 @@
+use maud::{html, Markup};
+
 use crate::{
     auth::CurrentUser,
-    session::FlashMessage,
     paths,
+    session::FlashMessage,
     views::{components::form, layout::base::base_layout},
 };
-use maud::{Markup, html};
 
 pub fn root(
     current_user: &CurrentUser,

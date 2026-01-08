@@ -1,9 +1,10 @@
+use sqlx::PgPool;
+
 use crate::{
     constants::errors,
     data::{ensure_rows_affected, errors::DataError},
     models::{todo::Todo, TodoId, UserId},
 };
-use sqlx::PgPool;
 
 pub async fn create_todo(db: &PgPool, user_id: UserId, task: &str) -> Result<(), DataError> {
     sqlx::query!(

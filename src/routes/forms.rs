@@ -1,5 +1,6 @@
-use crate::{config::AppState, handlers::forms, paths::forms::relative};
 use axum::{Router, routing::post};
+
+use crate::{config::AppState, handlers::forms, paths::forms::relative};
 
 pub fn public_form_routes() -> Router<AppState> {
     Router::new()

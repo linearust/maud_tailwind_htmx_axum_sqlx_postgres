@@ -1,5 +1,6 @@
-use crate::{config::AppState, handlers::actions, paths::actions::relative};
 use axum::{Router, routing::{delete, get, patch, post}};
+
+use crate::{config::AppState, handlers::actions, paths::actions::relative};
 
 pub fn public_action_routes() -> Router<AppState> {
     Router::new()

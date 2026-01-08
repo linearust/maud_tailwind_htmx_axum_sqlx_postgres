@@ -1,6 +1,7 @@
 use axum::{Extension, Form, extract::{Query, State}, response::{IntoResponse, Redirect}};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
+use tower_sessions::Session;
 use uuid::Uuid;
 
 use crate::{
@@ -13,7 +14,6 @@ use crate::{
     models::order::PaymentStatus,
     paths,
 };
-use tower_sessions::Session;
 
 #[derive(Deserialize)]
 pub struct PaymentInitiateForm {

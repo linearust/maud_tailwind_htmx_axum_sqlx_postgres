@@ -1,5 +1,5 @@
 use time::OffsetDateTime;
-use crate::models::order::PaymentStatus;
+use crate::models::{order::PaymentStatus, UserId};
 
 pub use crate::models::pagination::PaginatedResult;
 
@@ -11,7 +11,7 @@ pub struct AdminStats {
 }
 
 pub struct UserListItem {
-    pub user_id: i32,
+    pub user_id: UserId,
     pub email: String,
     pub is_admin: bool,
     pub created_at: OffsetDateTime,
@@ -33,7 +33,7 @@ pub struct OrderListItem {
 pub struct OrderDetail {
     pub order_id: String,
     pub order_number: String,
-    pub user_id: i32,
+    pub user_id: UserId,
     pub user_email: String,
     pub price_amount: i32,
     pub payment_status: PaymentStatus,

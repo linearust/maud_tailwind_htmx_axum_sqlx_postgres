@@ -1,4 +1,5 @@
 use sqlx::PgPool;
+
 use crate::{data::errors::DataError, models::UserId};
 
 pub struct UserInfo {

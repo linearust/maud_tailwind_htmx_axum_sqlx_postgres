@@ -1,5 +1,6 @@
-use crate::{config::AppState, handlers::pages, paths};
 use axum::{Router, routing::get};
+
+use crate::{config::AppState, handlers::pages, paths};
 
 pub fn public_page_routes() -> Router<AppState> {
     Router::new()

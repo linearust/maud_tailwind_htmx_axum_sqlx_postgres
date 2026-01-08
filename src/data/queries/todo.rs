@@ -1,5 +1,6 @@
-use crate::{data::errors::DataError, models::{todo::Todo, UserId}};
 use sqlx::PgPool;
+
+use crate::{data::errors::DataError, models::{todo::Todo, UserId}};
 
 pub async fn get_todos_for_user(db: &PgPool, user_id: UserId) -> Result<Vec<Todo>, DataError> {
     let todos = sqlx::query_as!(

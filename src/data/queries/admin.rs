@@ -1,4 +1,5 @@
 use sqlx::PgPool;
+
 use crate::{
     data::errors::DataError,
     models::{
@@ -60,7 +61,7 @@ pub async fn get_users_paginated(
     Ok(results
         .into_iter()
         .map(|r| UserListItem {
-            user_id: r.user_id,
+            user_id: UserId::from_db(r.user_id),
             email: r.email,
             is_admin: r.is_admin,
             created_at: r.created_at,
@@ -104,7 +105,7 @@ pub async fn get_user_detail(db: &PgPool, user_id: UserId) -> Result<UserDetail,
     .await?;
 
     Ok(UserDetail {
-        user_id: result.user_id,
+        user_id: UserId::from_db(result.user_id),
         email: result.email,
         is_admin: result.is_admin,
         created_at: result.created_at,

@@ -1,7 +1,8 @@
-use crate::constants::{auth::MAGIC_LINK_EXPIRY_MINUTES, messages};
-use crate::data::{errors::DataError, map_row_unauthorized};
 use sqlx::PgPool;
 use time::{Duration, OffsetDateTime};
+
+use crate::constants::{auth::MAGIC_LINK_EXPIRY_MINUTES, messages};
+use crate::data::{errors::DataError, map_row_unauthorized};
 
 pub async fn create_magic_link(
     db: &PgPool,

@@ -114,7 +114,7 @@ pub async fn send_magic_link(
         .to(to_mailbox)
         .subject("Sign in to your account")
         .header(ContentType::TEXT_HTML)
-        .body(email_templates::magic_link_signin(&magic_link))?;
+        .body(email_templates::magic_link_sign_in(&magic_link))?;
 
     match &config.mode {
         EmailMode::Console => {

@@ -19,7 +19,7 @@ pub async fn delete_actions_todos_todo_id(
 
     commands::todo::delete_todo(&db, user_id, todo_id).await?;
 
-    Ok(htmx::no_content())
+    Ok(htmx::empty_response())
 }
 
 pub async fn patch_actions_todos_todo_id_toggle(

@@ -8,7 +8,8 @@ Rust web application template with auth, payments, sessions, and database.
 
 ```bash
 cp .env.example .env  # Configure environment
-just run              # Run migrations + start server
+just migrate          # Run migrations
+just run              # Start dev server
 ```
 
 See `.env.example` for required configuration.

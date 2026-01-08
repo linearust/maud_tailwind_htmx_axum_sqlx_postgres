@@ -4,7 +4,7 @@
 
 use crate::constants::auth::MAGIC_LINK_EXPIRY_MINUTES;
 
-pub fn magic_link_signin(magic_link: &str) -> String {
+pub fn magic_link_sign_in(magic_link: &str) -> String {
     format!(
         r#"
         <html>

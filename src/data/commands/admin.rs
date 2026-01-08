@@ -1,4 +1,5 @@
 use sqlx::PgPool;
+
 use crate::{constants::admin::ROLE_ADMIN, data::errors::DataError, models::UserId};
 
 pub async fn grant_admin_role(

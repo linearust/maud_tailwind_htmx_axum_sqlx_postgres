@@ -6,7 +6,7 @@ use axum::{
 };
 use maud::Markup;
 
-pub fn no_content() -> Response {
+pub fn empty_response() -> Response {
     StatusCode::OK.into_response()
 }
 

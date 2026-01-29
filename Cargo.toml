@@ -1,5 +1,5 @@
 [package]
-name = "maud_tailwind_htmx_axum_sqlx_postgres"
+name = "axum_surreal_template"
 version = "0.1.0"
 edition = "2024"
 

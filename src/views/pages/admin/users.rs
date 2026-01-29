@@ -70,7 +70,7 @@ fn user_row(user: &UserListItem) -> Markup {
             td class="py-2 px-2 text-center" { (user.order_count) }
             td class="py-2 px-2 text-right" { "₩" (formatting::format_price(user.total_spent)) }
             td class="py-2 px-2 text-center" {
-                a href=(paths::with_param(paths::pages::admin::USER_DETAIL, "user_id", &user.user_id))
+                a href=(paths::with_param(paths::pages::admin::USER_DETAIL, "user_id", &user.id))
                     class="text-indigo-600 hover:underline text-sm"
                 {
                     "View"

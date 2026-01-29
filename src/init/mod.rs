@@ -1,5 +1,6 @@
 mod database;
 mod logging;
+mod schema;
 mod session;
 
 pub use database::init_database;

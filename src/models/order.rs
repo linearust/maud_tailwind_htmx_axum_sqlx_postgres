@@ -1,11 +1,10 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::models::{OrderId, UserId};
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "text", rename_all = "lowercase")]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum PaymentStatus {
     Pending,
@@ -45,8 +44,8 @@ impl PaymentStatus {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Order {
-    pub order_id: OrderId,
-    pub user_id: UserId,
+    pub id: OrderId,
+    pub user: UserId,
     pub user_email: String,
     pub filename: String,
     pub file_size: i32,
@@ -56,12 +55,12 @@ pub struct Order {
     pub payment_status: PaymentStatus,
     pub payment_key: Option<String>,
     pub order_number: String,
-    pub created_at: OffsetDateTime,
-    pub paid_at: Option<OffsetDateTime>,
+    pub created_at: DateTime<Utc>,
+    pub paid_at: Option<DateTime<Utc>>,
 }
 
 impl Order {
-    pub fn generate_order_number(user_id: UserId) -> String {
+    pub fn generate_order_number(user_id: &UserId) -> String {
         let uuid_string = Uuid::new_v4().to_string();
         let uuid_prefix = uuid_string
             .split('-')
@@ -73,12 +72,12 @@ impl Order {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrderSummary {
-    pub order_id: OrderId,
+    pub id: OrderId,
     pub filename: String,
     pub file_size: i32,
     pub text_length: i32,
     pub price_amount: i32,
     pub payment_status: PaymentStatus,
     pub order_number: String,
-    pub created_at: OffsetDateTime,
+    pub created_at: DateTime<Utc>,
 }

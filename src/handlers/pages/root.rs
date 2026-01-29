@@ -1,6 +1,5 @@
 use axum::{Extension, extract::State};
 use maud::Markup;
-use sqlx::PgPool;
 
 use crate::{
     auth::CurrentUser,
@@ -13,13 +12,12 @@ use crate::{
 
 pub async fn get_root(
     State(config): State<AppConfig>,
-    State(db): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
 ) -> Result<Markup, HandlerError> {
     let user_email = match &current_user {
         CurrentUser::Authenticated { user_id, .. } => {
-            queries::user::get_user_email(&db, *user_id).await?
+            queries::user::get_user_email(user_id).await?
         }
         CurrentUser::Guest => None,
     };

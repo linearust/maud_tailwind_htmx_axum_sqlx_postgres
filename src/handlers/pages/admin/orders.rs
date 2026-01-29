@@ -1,7 +1,6 @@
 use axum::{Extension, extract::{Query, State}};
 use maud::Markup;
 use serde::Deserialize;
-use sqlx::PgPool;
 
 use crate::{
     auth::CurrentUser,
@@ -24,7 +23,6 @@ pub struct OrdersQuery {
 
 pub async fn get_admin_orders(
     State(config): State<AppConfig>,
-    State(db): State<PgPool>,
     Query(query): Query<OrdersQuery>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
@@ -32,9 +30,9 @@ pub async fn get_admin_orders(
     let page = query.page.max(1);
     let status_filter = query.status;
 
-    let orders = admin::get_orders_paginated(&db, status_filter, page, ITEMS_PER_PAGE).await?;
+    let orders = admin::get_orders_paginated(status_filter, page, ITEMS_PER_PAGE).await?;
 
-    let total_count = admin::get_total_order_count(&db, status_filter).await?;
+    let total_count = admin::get_total_order_count(status_filter).await?;
 
     let paginated = PaginatedResult::new(orders, total_count, page, ITEMS_PER_PAGE);
 

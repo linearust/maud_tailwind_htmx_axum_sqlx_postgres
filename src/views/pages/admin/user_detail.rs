@@ -55,7 +55,7 @@ fn user_info_section(user: &UserDetail) -> Markup {
                 }
                 div {
                     span class="text-gray-600" { "User ID: " }
-                    span class="font-mono text-xs" { (user.user_id) }
+                    span class="font-mono text-xs" { (user.id) }
                 }
                 div {
                     span class="text-gray-600" { "Signup Date: " }
@@ -85,8 +85,8 @@ fn admin_role_section(user: &UserDetail) -> Markup {
                     }
                 }
                 form method="post"
-                    action=(paths::with_param(paths::actions::admin::REVOKE_ROLE, "user_id", &user.user_id))
-                    hx-delete=(paths::with_param(paths::actions::admin::REVOKE_ROLE, "user_id", &user.user_id))
+                    action=(paths::with_param(paths::actions::admin::REVOKE_ROLE, "user_id", &user.id))
+                    hx-delete=(paths::with_param(paths::actions::admin::REVOKE_ROLE, "user_id", &user.id))
                     hx-target="body"
                     hx-swap="outerHTML"
                 {
@@ -99,7 +99,7 @@ fn admin_role_section(user: &UserDetail) -> Markup {
             } @else {
                 p class="text-sm text-gray-600 mb-3" { "This user is not an admin" }
                 form method="post"
-                    action=(paths::with_param(paths::forms::admin::GRANT_ROLE, "user_id", &user.user_id))
+                    action=(paths::with_param(paths::forms::admin::GRANT_ROLE, "user_id", &user.id))
                 {
                     button type="submit"
                         class="text-sm text-indigo-600 hover:underline"
@@ -136,7 +136,7 @@ fn user_orders_section(user: &UserDetail, paginated_orders: &PaginatedResult<Ord
                 }
 
                 (pagination(
-                    &paths::with_param(paths::pages::admin::USER_DETAIL, "user_id", &user.user_id),
+                    &paths::with_param(paths::pages::admin::USER_DETAIL, "user_id", &user.id),
                     paginated_orders.page,
                     paginated_orders.total_pages,
                     paginated_orders.has_prev(),
@@ -146,4 +146,3 @@ fn user_orders_section(user: &UserDetail, paginated_orders: &PaginatedResult<Ord
         }
     }
 }
-

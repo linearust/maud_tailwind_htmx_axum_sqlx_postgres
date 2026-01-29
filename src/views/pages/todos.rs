@@ -41,10 +41,10 @@ pub fn todos(
 
 pub fn todo_item(todo: &Todo) -> Markup {
     html! {
-        li class="flex items-center gap-3 py-2 border-b" id={"todo-" (todo.todo_id)} {
+        li class="flex items-center gap-3 py-2 border-b" id={"todo-" (todo.id)} {
             form
-                hx-patch={(paths::with_param(paths::actions::TODOS_TODO_ID_TOGGLE, "todo_id", &todo.todo_id))}
-                hx-target={"#todo-" (todo.todo_id)}
+                hx-patch={(paths::with_param(paths::actions::TODOS_TODO_ID_TOGGLE, "todo_id", &todo.id))}
+                hx-target={"#todo-" (todo.id)}
                 hx-swap="outerHTML"
             {
                 input
@@ -62,9 +62,9 @@ pub fn todo_item(todo: &Todo) -> Markup {
             }
 
             form
-                hx-delete={(paths::with_param(paths::actions::TODOS_TODO_ID, "todo_id", &todo.todo_id))}
+                hx-delete={(paths::with_param(paths::actions::TODOS_TODO_ID, "todo_id", &todo.id))}
                 hx-confirm="Are you sure?"
-                hx-target={"#todo-" (todo.todo_id)}
+                hx-target={"#todo-" (todo.id)}
                 hx-swap="outerHTML"
             {
                 button

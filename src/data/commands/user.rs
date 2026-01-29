@@ -1,22 +1,35 @@
-use sqlx::PgPool;
+use serde::{Deserialize, Serialize};
 
-use crate::data::errors::DataError;
+use crate::{data::errors::DataError, db::DB, models::UserId};
 
-pub async fn get_or_create_user(db: &PgPool, email: &str) -> Result<i32, DataError> {
-    let existing = sqlx::query!("SELECT user_id FROM users WHERE email = $1", email)
-        .fetch_optional(db)
+#[derive(Serialize)]
+struct UserData {
+    email: String,
+}
+
+#[derive(Deserialize)]
+struct UserRecord {
+    id: UserId,
+}
+
+pub async fn get_or_create_user(email: &str) -> Result<UserId, DataError> {
+    // Check if user exists
+    let mut result = DB
+        .query("SELECT id FROM user WHERE email = $email LIMIT 1")
+        .bind(("email", email.to_string()))
         .await?;
 
-    if let Some(row) = existing {
-        return Ok(row.user_id);
+    let existing: Option<UserRecord> = result.take(0)?;
+
+    if let Some(user) = existing {
+        return Ok(user.id);
     }
 
-    let row = sqlx::query!(
-        "INSERT INTO users(email) VALUES($1) RETURNING user_id",
-        email
-    )
-    .fetch_one(db)
-    .await?;
+    // Create new user
+    let created: Option<UserRecord> = DB
+        .create("user")
+        .content(UserData { email: email.to_string() })
+        .await?;
 
-    Ok(row.user_id)
+    Ok(created.expect("User should be created").id)
 }

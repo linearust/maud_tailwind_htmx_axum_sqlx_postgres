@@ -9,7 +9,7 @@ pub fn order_row(order: &OrderListItem, show_user: bool) -> Markup {
     html! {
         tr class="border-b" {
             td class="py-2 px-2" {
-                a href=(paths::helpers::order_detail_path(&order.order_id))
+                a href=(paths::helpers::order_detail_path(&order.id))
                     class="text-indigo-600 hover:underline"
                 {
                     (order.order_number)
@@ -27,7 +27,7 @@ pub fn order_row(order: &OrderListItem, show_user: bool) -> Markup {
             td class="py-2 px-2 text-center text-gray-600" { (date_display) }
             @if show_user {
                 td class="py-2 px-2 text-center" {
-                    a href=(paths::helpers::order_detail_path(&order.order_id))
+                    a href=(paths::helpers::order_detail_path(&order.id))
                         class="text-indigo-600 hover:underline text-sm"
                     {
                         "View"

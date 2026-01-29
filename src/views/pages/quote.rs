@@ -44,7 +44,7 @@ pub fn quote(
                 }
 
                 form method="post" action=(paths::actions::PAYMENT_INITIATE) {
-                    input type="hidden" name="order_id" value=(order.order_id.to_string());
+                    input type="hidden" name="order_id" value=(order.id.to_string());
                     button
                         type="submit"
                         class="w-full bg-indigo-600 text-white px-3 py-2 hover:bg-indigo-700"

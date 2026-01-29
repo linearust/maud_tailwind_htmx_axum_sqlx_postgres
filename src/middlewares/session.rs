@@ -1,26 +1,23 @@
-use axum::{extract::{Request, State}, http::StatusCode, middleware::Next, response::IntoResponse};
-use sqlx::PgPool;
+use axum::{extract::Request, http::StatusCode, middleware::Next, response::IntoResponse};
 use tower_sessions::Session;
 
 use crate::{auth::{CurrentUser, SESSION_USER_ID_KEY}, data::queries, session::FlashMessage, models::UserId};
 
 pub async fn session_context(
-    State(db): State<PgPool>,
     session: Session,
     mut req: Request,
     next: Next,
 ) -> axum::response::Response {
-    let current_user = match session.get::<i32>(SESSION_USER_ID_KEY).await {
-        Ok(Some(session_user_id)) => {
-            let user_id = UserId::from_db(session_user_id);
-            match queries::user::get_user_info(&db, user_id).await {
+    let current_user = match session.get::<UserId>(SESSION_USER_ID_KEY).await {
+        Ok(Some(user_id)) => {
+            match queries::user::get_user_info(&user_id).await {
                 Ok(Some(info)) => CurrentUser::Authenticated {
                     user_id,
                     email: info.email,
                     is_admin: info.is_admin,
                 },
                 Ok(None) => {
-                    tracing::warn!("User ID {} in session but not found in database", session_user_id);
+                    tracing::warn!("User ID {:?} in session but not found in database", user_id);
                     CurrentUser::Guest
                 }
                 Err(e) => {

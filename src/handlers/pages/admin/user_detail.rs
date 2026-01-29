@@ -1,6 +1,5 @@
 use axum::{Extension, extract::{Path, Query, State}};
 use maud::Markup;
-use sqlx::PgPool;
 
 use crate::{
     auth::CurrentUser,
@@ -15,20 +14,21 @@ use crate::{
 
 pub async fn get_admin_user_detail(
     State(config): State<AppConfig>,
-    State(db): State<PgPool>,
-    Path(raw_user_id): Path<i32>,
+    Path(raw_user_id): Path<String>,
     Query(query): Query<PaginationQuery>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
 ) -> Result<Markup, HandlerError> {
     let page = query.page.max(1);
-    let user_id = UserId::from_db(raw_user_id);
+    let user_id = UserId::parse(&raw_user_id).ok_or_else(|| {
+        crate::data::errors::DataError::InvalidInput("Invalid user ID".to_string())
+    })?;
 
-    let user = admin::get_user_detail(&db, user_id).await?;
+    let user = admin::get_user_detail(&user_id).await?;
 
-    let orders = admin::get_user_orders(&db, user_id, page, ITEMS_PER_PAGE).await?;
+    let orders = admin::get_user_orders(&user_id, page, ITEMS_PER_PAGE).await?;
 
-    let total_count = admin::get_user_order_count(&db, user_id).await?;
+    let total_count = admin::get_user_order_count(&user_id).await?;
     let paginated_orders = PaginatedResult::new(orders, total_count, page, ITEMS_PER_PAGE);
 
     Ok(admin_views::user_detail(

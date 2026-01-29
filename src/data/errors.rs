@@ -4,7 +4,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum DataError {
     #[error("Database error")]
-    Database(#[from] sqlx::Error),
+    Database(#[from] surrealdb::Error),
 
     #[error("{0}")]
     NotFound(&'static str),

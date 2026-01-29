@@ -1,5 +1,4 @@
 use axum::{Extension, Form, extract::State, http::StatusCode, response::IntoResponse};
-use sqlx::PgPool;
 use tower_sessions::Session;
 use validator::Validate;
 
@@ -19,7 +18,6 @@ use super::parse_validation_errors;
 
 pub async fn post_forms_todos(
     State(config): State<AppConfig>,
-    State(db): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     Form(form): Form<CreateTodoForm>,
@@ -27,25 +25,24 @@ pub async fn post_forms_todos(
     let user_id = current_user.require_authenticated();
 
     if let Err(validation_errors) = form.validate() {
-        return render_validation_errors(&db, &current_user, config.site_name(), user_id, &form, &validation_errors).await;
+        return render_validation_errors(&current_user, config.site_name(), user_id, &form, &validation_errors).await;
     }
 
-    commands::todo::create_todo(&db, user_id, form.task.trim()).await?;
+    commands::todo::create_todo(user_id, form.task.trim()).await?;
     Ok(FlashMessage::success(messages::TODO_CREATED)
         .set_and_redirect(&session, pages::TODOS)
         .await?)
 }
 
 async fn render_validation_errors(
-    db: &PgPool,
     current_user: &CurrentUser,
     site_name: &str,
-    user_id: UserId,
+    user_id: &UserId,
     form: &CreateTodoForm,
     validation_errors: &validator::ValidationErrors,
 ) -> HandlerResult {
     let errors = parse_validation_errors(validation_errors);
-    let todos = queries::todo::get_todos_for_user(db, user_id).await?;
+    let todos = queries::todo::get_todos_for_user(user_id).await?;
 
     Ok((
         StatusCode::BAD_REQUEST,

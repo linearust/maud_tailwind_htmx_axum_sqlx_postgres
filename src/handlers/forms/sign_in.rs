@@ -1,5 +1,4 @@
 use axum::{Extension, Form, extract::State, http::StatusCode, response::{IntoResponse, Response}};
-use sqlx::PgPool;
 use tower_sessions::Session;
 use validator::Validate;
 
@@ -20,7 +19,6 @@ use super::parse_validation_errors;
 
 pub async fn post_forms_sign_in(
     State(config): State<AppConfig>,
-    State(db): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     Form(form): Form<MagicLinkRequestForm>,
@@ -30,7 +28,7 @@ pub async fn post_forms_sign_in(
     }
 
     let token = auth::generate_token();
-    commands::magic_link::create_magic_link(&db, &form.email, &token).await?;
+    commands::magic_link::create_magic_link(&form.email, &token).await?;
 
     if let Err(e) = email::send_magic_link(config.email(), &form.email, &token).await {
         tracing::error!("Failed to send magic link email: {}", e);

@@ -1,5 +1,4 @@
 use axum::extract::FromRef;
-use sqlx::PgPool;
 
 use crate::email::EmailConfig;
 
@@ -7,8 +6,6 @@ use crate::email::EmailConfig;
 pub enum ConfigError {
     #[error("Missing required environment variable: {0}")]
     MissingVar(String),
-    #[error("Invalid value for {0}: {1}")]
-    InvalidValue(String, String),
     #[error("Email configuration error: {0}")]
     Email(#[from] crate::email::EmailError),
 }
@@ -93,20 +90,15 @@ impl AppConfig {
     pub fn payment(&self) -> &PaymentConfig {
         &self.payment
     }
-
-    pub fn base_url(&self) -> &str {
-        self.email.base_url()
-    }
 }
 
 #[derive(Clone, FromRef)]
 pub struct AppState {
-    database: PgPool,
     config: AppConfig,
 }
 
 impl AppState {
-    pub fn new(database: PgPool, config: AppConfig) -> Self {
-        Self { database, config }
+    pub fn new(config: AppConfig) -> Self {
+        Self { config }
     }
 }

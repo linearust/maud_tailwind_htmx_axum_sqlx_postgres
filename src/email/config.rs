@@ -82,10 +82,6 @@ impl EmailConfig {
         })
     }
 
-    pub fn base_url(&self) -> &str {
-        &self.base_url
-    }
-
     fn create_smtp_transport(&self) -> Result<SmtpTransport, EmailError> {
         match &self.mode {
             EmailMode::Smtp { host, port, username, password } => {

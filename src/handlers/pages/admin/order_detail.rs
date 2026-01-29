@@ -1,11 +1,11 @@
 use axum::{Extension, extract::{Path, State}};
 use maud::Markup;
-use sqlx::PgPool;
 
 use crate::{
     auth::CurrentUser,
     config::AppConfig,
-    data::queries::admin,
+    constants::errors,
+    data::{errors::DataError, queries::admin},
     session::FlashMessage,
     handlers::errors::HandlerError,
     models::OrderId,
@@ -14,12 +14,12 @@ use crate::{
 
 pub async fn get_admin_order_detail(
     State(config): State<AppConfig>,
-    State(db): State<PgPool>,
-    Path(order_id): Path<OrderId>,
+    Path(raw_order_id): Path<String>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
 ) -> Result<Markup, HandlerError> {
-    let order = admin::get_order_detail(&db, order_id).await?;
+    let order_id = OrderId::parse(&raw_order_id).ok_or(DataError::NotFound(errors::ORDER_NOT_FOUND))?;
+    let order = admin::get_order_detail(&order_id).await?;
 
     Ok(admin_views::order_detail(
         &current_user,

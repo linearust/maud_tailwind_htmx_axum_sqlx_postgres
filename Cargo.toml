@@ -17,24 +17,19 @@ maud = { version = "0.27.0", features = ["axum"] }
 tower = "0.5.2"
 tower-http = { version = "0.6.6", features = ["fs", "trace"] }
 tower-sessions = "0.14.0"
-tower-sessions-sqlx-store = { version = "0.15.0", features = ["postgres"] }
 
 # ============================================================================
 # Database
 # ============================================================================
-sqlx = { version = "0.8.6", features = [
-    "macros",
-    "postgres",
-    "runtime-tokio",
-    "tls-rustls",
-    "uuid",
-] }
+chrono = { version = "0.4", features = ["serde"] }
+surrealdb = { version = "2", features = ["kv-mem", "kv-surrealkv"] }
 time = "0.3.44"
 uuid = { version = "1.11.0", features = ["v4", "serde"] }
 
 # ============================================================================
 # Serialization
 # ============================================================================
+rmp-serde = "1.3.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.140"
 
@@ -48,16 +43,17 @@ validator = { version = "0.20.0", features = ["derive"] }
 # ============================================================================
 # HTTP Client (Payment Gateway)
 # ============================================================================
-reqwest = { version = "0.12.12", features = ["json"] }
+reqwest = { version = "0.12.12", default-features = false, features = ["json", "rustls-tls"] }
 
 # ============================================================================
 # Email
 # ============================================================================
-lettre = "0.11.14"
+lettre = { version = "0.11.14", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "builder", "hostname"] }
 
 # ============================================================================
 # Utilities
 # ============================================================================
+async-trait = "0.1.89"
 dotenvy = "0.15.7"
 regex = "1.12.2"
 thiserror = "2.0.17"

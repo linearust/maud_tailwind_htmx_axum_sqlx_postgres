@@ -1,281 +1,248 @@
-use sqlx::PgPool;
+use chrono::{DateTime, Utc};
+use serde::Deserialize;
 
 use crate::{
     data::errors::DataError,
+    db::DB,
     models::{
-        admin::{AdminStats, UserListItem, UserDetail, OrderListItem, OrderDetail},
+        admin::{AdminStats, OrderDetail, OrderListItem, UserDetail, UserListItem},
         order::PaymentStatus,
-        pagination,
-        OrderId, UserId,
+        pagination, OrderId, UserId,
     },
 };
 
-pub async fn get_admin_stats(db: &PgPool) -> Result<AdminStats, DataError> {
-    let result = sqlx::query!(
-        r#"
-        SELECT
-            (SELECT COUNT(*) FROM users) as "total_users!",
-            (SELECT COUNT(*) FROM orders WHERE payment_status = 'paid') as "total_orders!",
-            (SELECT COALESCE(SUM(price_amount), 0) FROM orders WHERE payment_status = 'paid') as "total_revenue!",
-            (SELECT COUNT(*) FROM orders WHERE payment_status = 'paid' AND created_at >= NOW() - INTERVAL '7 days') as "orders_last_7_days!"
-        "#
-    )
-    .fetch_one(db)
-    .await?;
+#[derive(Deserialize)]
+struct CountResult {
+    count: i64,
+}
+
+#[derive(Deserialize)]
+struct SumResult {
+    total: Option<i64>,
+}
+
+pub async fn get_admin_stats() -> Result<AdminStats, DataError> {
+    let mut result = DB
+        .query(
+            r#"
+            SELECT count() as count FROM user GROUP ALL;
+            SELECT count() as count FROM order WHERE payment_status = 'paid' GROUP ALL;
+            SELECT math::sum(price_amount) as total FROM order WHERE payment_status = 'paid' GROUP ALL;
+            SELECT count() as count FROM order WHERE payment_status = 'paid' AND created_at >= time::now() - 7d GROUP ALL;
+            "#,
+        )
+        .await?;
+
+    let total_users: Option<CountResult> = result.take(0)?;
+    let total_orders: Option<CountResult> = result.take(1)?;
+    let total_revenue: Option<SumResult> = result.take(2)?;
+    let orders_last_7_days: Option<CountResult> = result.take(3)?;
 
     Ok(AdminStats {
-        total_users: result.total_users,
-        total_orders: result.total_orders,
-        total_revenue: result.total_revenue as i32,
-        orders_last_7_days: result.orders_last_7_days,
+        total_users: total_users.map(|c| c.count).unwrap_or(0),
+        total_orders: total_orders.map(|c| c.count).unwrap_or(0),
+        total_revenue: total_revenue.and_then(|s| s.total).unwrap_or(0) as i32,
+        orders_last_7_days: orders_last_7_days.map(|c| c.count).unwrap_or(0),
     })
 }
 
-pub async fn get_users_paginated(
-    db: &PgPool,
-    page: i64,
-    per_page: i64,
-) -> Result<Vec<UserListItem>, DataError> {
+#[derive(Deserialize)]
+struct UserWithStats {
+    id: UserId,
+    email: String,
+    created_at: DateTime<Utc>,
+}
+
+pub async fn get_users_paginated(page: i64, per_page: i64) -> Result<Vec<UserListItem>, DataError> {
     let offset = pagination::offset(page, per_page);
 
-    let results = sqlx::query!(
-        r#"
-        SELECT
-            u.user_id as user_id,
-            u.email,
-            EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id = u.user_id AND ur.role = 'admin') as "is_admin!",
-            u.created_at,
-            COUNT(CASE WHEN o.payment_status = 'paid' THEN 1 END) as "order_count!",
-            COALESCE(SUM(CASE WHEN o.payment_status = 'paid' THEN o.price_amount ELSE 0 END), 0) as total_spent
-        FROM users u
-        LEFT JOIN orders o ON u.user_id = o.user_id
-        GROUP BY u.user_id, u.email, u.created_at
-        ORDER BY u.created_at DESC
-        LIMIT $1 OFFSET $2
-        "#,
-        per_page,
-        offset
-    )
-    .fetch_all(db)
-    .await?;
+    let mut result = DB
+        .query(
+            "SELECT id, email, created_at FROM user ORDER BY created_at DESC LIMIT $limit START $offset",
+        )
+        .bind(("limit", per_page))
+        .bind(("offset", offset))
+        .await?;
 
-    Ok(results
-        .into_iter()
-        .map(|r| UserListItem {
-            user_id: UserId::from_db(r.user_id),
-            email: r.email,
-            is_admin: r.is_admin,
-            created_at: r.created_at,
-            order_count: r.order_count,
-            total_spent: r.total_spent.unwrap_or(0) as i32,
-        })
-        .collect())
+    let users: Vec<UserWithStats> = result.take(0)?;
+
+    let mut items = Vec::with_capacity(users.len());
+    for user in users {
+        let user_record_id = user.id.clone().into_record_id();
+        let mut admin_result = DB
+            .query("SELECT count() as count FROM user_role WHERE user = $user AND role = 'admin' GROUP ALL")
+            .bind(("user", user_record_id.clone()))
+            .await?;
+        let admin_check: Option<CountResult> = admin_result.take(0)?;
+
+        let mut order_result = DB
+            .query(
+                r#"
+                SELECT count() as count FROM order WHERE user = $user AND payment_status = 'paid' GROUP ALL;
+                SELECT math::sum(price_amount) as total FROM order WHERE user = $user AND payment_status = 'paid' GROUP ALL;
+                "#,
+            )
+            .bind(("user", user_record_id))
+            .await?;
+
+        let order_count: Option<CountResult> = order_result.take(0)?;
+        let total_spent: Option<SumResult> = order_result.take(1)?;
+
+        items.push(UserListItem {
+            id: user.id,
+            email: user.email,
+            is_admin: admin_check.is_some_and(|c| c.count > 0),
+            created_at: user.created_at,
+            order_count: order_count.map(|c| c.count).unwrap_or(0),
+            total_spent: total_spent.and_then(|s| s.total).unwrap_or(0) as i32,
+        });
+    }
+
+    Ok(items)
 }
 
-pub async fn get_total_user_count(db: &PgPool) -> Result<i64, DataError> {
-    let result = sqlx::query!(
-        r#"
-        SELECT COUNT(*) as "count!"
-        FROM users
-        "#
-    )
-    .fetch_one(db)
-    .await?;
+pub async fn get_total_user_count() -> Result<i64, DataError> {
+    let mut result = DB
+        .query("SELECT count() as count FROM user GROUP ALL")
+        .await?;
 
-    Ok(result.count)
+    let count: Option<CountResult> = result.take(0)?;
+    Ok(count.map(|c| c.count).unwrap_or(0))
 }
 
-pub async fn get_user_detail(db: &PgPool, user_id: UserId) -> Result<UserDetail, DataError> {
-    let result = sqlx::query!(
-        r#"
-        SELECT
-            u.user_id as user_id,
-            u.email,
-            EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id = u.user_id AND ur.role = 'admin') as "is_admin!",
-            u.created_at,
-            COUNT(CASE WHEN o.payment_status = 'paid' THEN 1 END) as "order_count!",
-            COALESCE(SUM(CASE WHEN o.payment_status = 'paid' THEN o.price_amount ELSE 0 END), 0) as total_spent
-        FROM users u
-        LEFT JOIN orders o ON u.user_id = o.user_id
-        WHERE u.user_id = $1
-        GROUP BY u.user_id, u.email, u.created_at
-        "#,
-        user_id.as_i32()
-    )
-    .fetch_one(db)
-    .await?;
+pub async fn get_user_detail(user_id: &UserId) -> Result<UserDetail, DataError> {
+    let user: Option<UserWithStats> = DB.select(user_id.clone().into_record_id()).await?;
+    let user = user.ok_or(DataError::NotFound("User not found"))?;
+
+    let user_record_id = user_id.clone().into_record_id();
+    let mut admin_result = DB
+        .query("SELECT count() as count FROM user_role WHERE user = $user AND role = 'admin' GROUP ALL")
+        .bind(("user", user_record_id.clone()))
+        .await?;
+    let admin_check: Option<CountResult> = admin_result.take(0)?;
+
+    let mut order_result = DB
+        .query(
+            r#"
+            SELECT count() as count FROM order WHERE user = $user AND payment_status = 'paid' GROUP ALL;
+            SELECT math::sum(price_amount) as total FROM order WHERE user = $user AND payment_status = 'paid' GROUP ALL;
+            "#,
+        )
+        .bind(("user", user_record_id))
+        .await?;
+
+    let order_count: Option<CountResult> = order_result.take(0)?;
+    let total_spent: Option<SumResult> = order_result.take(1)?;
 
     Ok(UserDetail {
-        user_id: UserId::from_db(result.user_id),
-        email: result.email,
-        is_admin: result.is_admin,
-        created_at: result.created_at,
-        order_count: result.order_count,
-        total_spent: result.total_spent.unwrap_or(0) as i32,
+        id: user.id,
+        email: user.email,
+        is_admin: admin_check.is_some_and(|c| c.count > 0),
+        created_at: user.created_at,
+        order_count: order_count.map(|c| c.count).unwrap_or(0),
+        total_spent: total_spent.and_then(|s| s.total).unwrap_or(0) as i32,
     })
 }
 
 pub async fn get_user_orders(
-    db: &PgPool,
-    user_id: UserId,
+    user_id: &UserId,
     page: i64,
     per_page: i64,
 ) -> Result<Vec<OrderListItem>, DataError> {
     let offset = pagination::offset(page, per_page);
 
-    sqlx::query_as!(
-        OrderListItem,
-        r#"
-        SELECT
-            order_id as "order_id: OrderId",
-            order_number,
-            user_email,
-            price_amount,
-            payment_status as "payment_status: PaymentStatus",
-            created_at
-        FROM orders
-        WHERE user_id = $1
-        ORDER BY created_at DESC
-        LIMIT $2 OFFSET $3
-        "#,
-        user_id.as_i32(),
-        per_page,
-        offset
-    )
-    .fetch_all(db)
-    .await
-    .map_err(DataError::from)
+    let mut result = DB
+        .query(
+            "SELECT id, order_number, user_email, price_amount, payment_status, created_at
+             FROM order
+             WHERE user = $user
+             ORDER BY created_at DESC
+             LIMIT $limit START $offset",
+        )
+        .bind(("user", user_id.clone().into_record_id()))
+        .bind(("limit", per_page))
+        .bind(("offset", offset))
+        .await?;
+
+    let orders: Vec<OrderListItem> = result.take(0)?;
+    Ok(orders)
 }
 
-pub async fn get_user_order_count(db: &PgPool, user_id: UserId) -> Result<i64, DataError> {
-    let result = sqlx::query!(
-        r#"
-        SELECT COUNT(*) as "count!"
-        FROM orders
-        WHERE user_id = $1
-        "#,
-        user_id.as_i32()
-    )
-    .fetch_one(db)
-    .await?;
+pub async fn get_user_order_count(user_id: &UserId) -> Result<i64, DataError> {
+    let mut result = DB
+        .query("SELECT count() as count FROM order WHERE user = $user GROUP ALL")
+        .bind(("user", user_id.clone().into_record_id()))
+        .await?;
 
-    Ok(result.count)
+    let count: Option<CountResult> = result.take(0)?;
+    Ok(count.map(|c| c.count).unwrap_or(0))
 }
 
 pub async fn get_orders_paginated(
-    db: &PgPool,
     status_filter: Option<PaymentStatus>,
     page: i64,
     per_page: i64,
 ) -> Result<Vec<OrderListItem>, DataError> {
     let offset = pagination::offset(page, per_page);
 
-    let result = match status_filter {
+    let mut result = match status_filter {
         Some(status) => {
-            sqlx::query_as!(
-                OrderListItem,
-                r#"
-                SELECT
-                    order_id as "order_id: OrderId",
-                    order_number,
-                    user_email,
-                    price_amount,
-                    payment_status as "payment_status: PaymentStatus",
-                    created_at
-                FROM orders
-                WHERE payment_status = $1
-                ORDER BY created_at DESC
-                LIMIT $2 OFFSET $3
-                "#,
-                status as PaymentStatus,
-                per_page,
-                offset
+            DB.query(
+                "SELECT id, order_number, user_email, price_amount, payment_status, created_at
+                 FROM order
+                 WHERE payment_status = $status
+                 ORDER BY created_at DESC
+                 LIMIT $limit START $offset",
             )
-            .fetch_all(db)
-            .await
+            .bind(("status", status.as_str().to_string()))
+            .bind(("limit", per_page))
+            .bind(("offset", offset))
+            .await?
         }
         None => {
-            sqlx::query_as!(
-                OrderListItem,
-                r#"
-                SELECT
-                    order_id as "order_id: OrderId",
-                    order_number,
-                    user_email,
-                    price_amount,
-                    payment_status as "payment_status: PaymentStatus",
-                    created_at
-                FROM orders
-                ORDER BY created_at DESC
-                LIMIT $1 OFFSET $2
-                "#,
-                per_page,
-                offset
+            DB.query(
+                "SELECT id, order_number, user_email, price_amount, payment_status, created_at
+                 FROM order
+                 ORDER BY created_at DESC
+                 LIMIT $limit START $offset",
             )
-            .fetch_all(db)
-            .await
+            .bind(("limit", per_page))
+            .bind(("offset", offset))
+            .await?
         }
     };
 
-    result.map_err(DataError::from)
+    let orders: Vec<OrderListItem> = result.take(0)?;
+    Ok(orders)
 }
 
-pub async fn get_total_order_count(
-    db: &PgPool,
-    status_filter: Option<PaymentStatus>,
-) -> Result<i64, DataError> {
-    match status_filter {
+pub async fn get_total_order_count(status_filter: Option<PaymentStatus>) -> Result<i64, DataError> {
+    let mut result = match status_filter {
         Some(status) => {
-            let result = sqlx::query!(
-                r#"
-                SELECT COUNT(*) as "count!"
-                FROM orders
-                WHERE payment_status = $1
-                "#,
-                status as PaymentStatus
-            )
-            .fetch_one(db)
-            .await?;
-
-            Ok(result.count)
+            DB.query("SELECT count() as count FROM order WHERE payment_status = $status GROUP ALL")
+                .bind(("status", status.as_str().to_string()))
+                .await?
         }
         None => {
-            let result = sqlx::query!(
-                r#"
-                SELECT COUNT(*) as "count!"
-                FROM orders
-                "#
-            )
-            .fetch_one(db)
-            .await?;
-
-            Ok(result.count)
+            DB.query("SELECT count() as count FROM order GROUP ALL")
+                .await?
         }
-    }
+    };
+
+    let count: Option<CountResult> = result.take(0)?;
+    Ok(count.map(|c| c.count).unwrap_or(0))
 }
 
-pub async fn get_order_detail(db: &PgPool, order_id: OrderId) -> Result<OrderDetail, DataError> {
-    sqlx::query_as!(
-        OrderDetail,
-        r#"
-        SELECT
-            order_id as "order_id: OrderId",
-            order_number,
-            user_id,
-            user_email,
-            price_amount,
-            payment_status as "payment_status: PaymentStatus",
-            created_at,
-            paid_at,
-            payment_key,
-            filename,
-            text_length
-        FROM orders
-        WHERE order_id = $1
-        "#,
-        order_id.as_uuid()
-    )
-    .fetch_one(db)
-    .await
-    .map_err(DataError::from)
+pub async fn get_order_detail(order_id: &OrderId) -> Result<OrderDetail, DataError> {
+    let mut result = DB
+        .query(
+            "SELECT id, order_number, user, user_email, price_amount, payment_status, created_at, paid_at, payment_key, filename, text_length
+             FROM order
+             WHERE id = $order_id",
+        )
+        .bind(("order_id", order_id.clone().into_record_id()))
+        .await?;
+
+    let order: Option<OrderDetail> = result.take(0)?;
+    order.ok_or(DataError::NotFound("Order not found"))
 }

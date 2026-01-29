@@ -1,5 +1,4 @@
-use axum::{Extension, extract::{Path, State}};
-use sqlx::PgPool;
+use axum::{Extension, extract::Path};
 use tower_sessions::Session;
 
 use crate::{
@@ -13,23 +12,24 @@ use crate::{
 };
 
 pub async fn delete_actions_admin_users_user_id_revoke_role(
-    State(db): State<PgPool>,
-    Path(raw_user_id): Path<i32>,
+    Path(raw_user_id): Path<String>,
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
 ) -> HandlerResult {
     let admin_user_id = current_user.require_authenticated();
-    let user_id = UserId::from_db(raw_user_id);
+    let user_id = UserId::parse(&raw_user_id).ok_or_else(|| {
+        crate::data::errors::DataError::InvalidInput("Invalid user ID".to_string())
+    })?;
 
-    if user_id == admin_user_id {
+    if user_id == *admin_user_id {
         return Ok(FlashMessage::error(errors::CANNOT_REVOKE_OWN_ADMIN)
-            .set_and_redirect(&session, &helpers::user_detail_path(user_id))
+            .set_and_redirect(&session, &helpers::user_detail_path(&user_id))
             .await?);
     }
 
-    admin::revoke_admin_role(&db, user_id).await?;
+    admin::revoke_admin_role(&user_id).await?;
 
     Ok(FlashMessage::success(messages::ADMIN_ROLE_REVOKED)
-        .set_and_redirect(&session, &helpers::user_detail_path(user_id))
+        .set_and_redirect(&session, &helpers::user_detail_path(&user_id))
         .await?)
 }

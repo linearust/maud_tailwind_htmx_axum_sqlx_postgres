@@ -4,6 +4,7 @@ mod auth;
 mod config;
 mod constants;
 mod data;
+mod db;
 mod email;
 mod handlers;
 mod init;
@@ -12,6 +13,7 @@ mod models;
 mod paths;
 mod routes;
 mod session;
+mod session_store;
 mod views;
 
 use config::{AppConfig, AppState};
@@ -29,11 +31,11 @@ async fn main() {
         std::process::exit(1);
     });
 
-    let db = init::init_database(config.database_url()).await;
-    let session_layer = init::init_session(db.clone()).await;
+    init::init_database(config.database_url()).await;
+    let session_layer = init::init_session();
 
     let server_addr = config.server_addr().to_string();
-    let state = AppState::new(db, config);
+    let state = AppState::new(config);
 
     let listener = tokio::net::TcpListener::bind(&server_addr)
         .await

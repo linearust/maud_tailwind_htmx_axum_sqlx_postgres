@@ -10,8 +10,4 @@ check:
     cargo test
 
 setup:
-    cargo install sqlx-cli --no-default-features --features postgres
     cargo install cargo-watch
-
-migrate:
-    sqlx migrate run

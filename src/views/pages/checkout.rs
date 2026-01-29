@@ -63,7 +63,7 @@ pub fn checkout(
     client_key: &str,
 ) -> Markup {
     let success_url = "/actions/payment/verify".to_string();
-    let fail_url = paths::helpers::quote_path(order.order_id);
+    let fail_url = paths::helpers::quote_path(&order.id);
 
     let content = html! {
         div class="max-w-lg mx-auto" {

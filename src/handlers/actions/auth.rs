@@ -1,6 +1,5 @@
-use axum::extract::{Query, State};
+use axum::extract::Query;
 use serde::Deserialize;
-use sqlx::PgPool;
 use tower_sessions::Session;
 
 use crate::{
@@ -18,11 +17,10 @@ pub struct VerifyQuery {
 }
 
 pub async fn get_actions_auth_verify(
-    State(db): State<PgPool>,
     session: Session,
     Query(query): Query<VerifyQuery>,
 ) -> HandlerResult {
-    let email = match commands::magic_link::verify_and_consume_magic_link(&db, &query.token).await
+    let email = match commands::magic_link::verify_and_consume_magic_link(&query.token).await
     {
         Ok(email) => email,
         Err(e) => {
@@ -33,7 +31,7 @@ pub async fn get_actions_auth_verify(
         }
     };
 
-    let user_id = commands::user::get_or_create_user(&db, &email).await?;
+    let user_id = commands::user::get_or_create_user(&email).await?;
 
     session.flush().await?;
     session.insert(SESSION_USER_ID_KEY, user_id).await?;

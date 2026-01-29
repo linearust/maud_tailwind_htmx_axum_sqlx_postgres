@@ -21,9 +21,9 @@ pub enum CurrentUser {
 
 impl CurrentUser {
     /// Only call in protected routes — panics on Guest. See enum docs for safety.
-    pub fn require_authenticated(&self) -> UserId {
+    pub fn require_authenticated(&self) -> &UserId {
         match self {
-            CurrentUser::Authenticated { user_id, .. } => *user_id,
+            CurrentUser::Authenticated { user_id, .. } => user_id,
             CurrentUser::Guest => unreachable!(
                 "Protected route accessed by guest user. This indicates a middleware \
                 configuration error. Ensure the route is in protected_routes() and \

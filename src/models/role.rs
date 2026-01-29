@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Prevents stringly-typed role checking.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "text", rename_all = "lowercase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {
     Admin,

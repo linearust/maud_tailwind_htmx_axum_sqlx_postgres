@@ -1,6 +1,5 @@
 use axum::{Extension, Form, extract::{Query, State}, response::{IntoResponse, Redirect}};
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
 use tower_sessions::Session;
 
 use crate::{
@@ -20,22 +19,21 @@ pub struct PaymentInitiateForm {
 }
 
 pub async fn post_actions_payment_initiate(
-    State(db): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     Form(form): Form<PaymentInitiateForm>,
 ) -> HandlerResult {
     let user_id = current_user.require_authenticated();
 
-    let order = queries::order::get_order_for_user(&db, form.order_id, user_id).await?;
+    let order = queries::order::get_order_for_user(&form.order_id, user_id).await?;
 
     if !matches!(order.payment_status, PaymentStatus::Pending) {
         return Ok(FlashMessage::error(messages::ORDER_ALREADY_PROCESSED)
-            .set_and_redirect(&session, &paths::helpers::quote_path(order.order_id))
+            .set_and_redirect(&session, &paths::helpers::quote_path(&order.id))
             .await?);
     }
 
-    let checkout_url = paths::helpers::checkout_path(order.order_id);
+    let checkout_url = paths::helpers::checkout_path(&order.id);
     Ok(Redirect::to(&checkout_url).into_response())
 }
 
@@ -92,7 +90,7 @@ async fn confirm_payment_with_toss(secret_key: &str, query: &PaymentVerifyQuery)
     }
 }
 
-async fn redirect_with_error(session: &Session, order_id: OrderId) -> HandlerResult {
+async fn redirect_with_error(session: &Session, order_id: &OrderId) -> HandlerResult {
     Ok(FlashMessage::error(messages::PAYMENT_FAILED)
         .set_and_redirect(session, &paths::helpers::quote_path(order_id))
         .await?)
@@ -100,29 +98,28 @@ async fn redirect_with_error(session: &Session, order_id: OrderId) -> HandlerRes
 
 pub async fn get_actions_payment_verify(
     State(config): State<AppConfig>,
-    State(db): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     Query(query): Query<PaymentVerifyQuery>,
 ) -> HandlerResult {
     let user_id = current_user.require_authenticated();
-    let order = queries::order::get_order_by_order_number_for_user(&db, &query.order_id, user_id).await?;
+    let order = queries::order::get_order_by_order_number_for_user(&query.order_id, user_id).await?;
 
     if query.amount != order.price_amount {
         tracing::error!("Payment amount mismatch: expected {}, got {}", order.price_amount, query.amount);
-        return redirect_with_error(&session, order.order_id).await;
+        return redirect_with_error(&session, &order.id).await;
     }
 
     let status = confirm_payment_with_toss(config.payment().toss_secret_key(), &query).await;
 
-    commands::order::update_order_payment(&db, order.order_id, &query.payment_key, status).await?;
+    commands::order::update_order_payment(&order.id, &query.payment_key, status).await?;
 
     match status {
         PaymentStatus::Paid => {
             Ok(FlashMessage::success(messages::PAYMENT_SUCCESS)
-                .set_and_redirect(&session, &paths::helpers::payment_confirmation_path(order.order_id))
+                .set_and_redirect(&session, &paths::helpers::payment_confirmation_path(&order.id))
                 .await?)
         }
-        _ => redirect_with_error(&session, order.order_id).await,
+        _ => redirect_with_error(&session, &order.id).await,
     }
 }

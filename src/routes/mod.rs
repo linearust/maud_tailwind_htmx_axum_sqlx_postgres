@@ -8,11 +8,10 @@ mod pages;
 use axum::{Router, middleware};
 use tower_http::services::ServeDir;
 use tower_sessions::SessionManagerLayer;
-use tower_sessions_sqlx_store::PostgresStore;
 
-use crate::{config::AppState, handlers, middlewares, paths};
+use crate::{config::AppState, handlers, middlewares, paths, session_store::SurrealSessionStore};
 
-pub fn create_routes(state: AppState, session_layer: SessionManagerLayer<PostgresStore>) -> Router {
+pub fn create_routes(state: AppState, session_layer: SessionManagerLayer<SurrealSessionStore>) -> Router {
     Router::new()
         .nest_service(paths::static_files::BASE, ServeDir::new("static"))
         .merge(app_routes(state, session_layer))
@@ -20,7 +19,7 @@ pub fn create_routes(state: AppState, session_layer: SessionManagerLayer<Postgre
         .layer(middlewares::create_http_trace_layer())
 }
 
-fn app_routes(state: AppState, session_layer: SessionManagerLayer<PostgresStore>) -> Router {
+fn app_routes(state: AppState, session_layer: SessionManagerLayer<SurrealSessionStore>) -> Router {
     let state_clone = state.clone();
 
     Router::new()

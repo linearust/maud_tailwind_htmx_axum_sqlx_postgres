@@ -1,5 +1,4 @@
-use axum::{Extension, extract::{Multipart, State}, response::{IntoResponse, Redirect}};
-use sqlx::PgPool;
+use axum::{Extension, extract::Multipart, response::{IntoResponse, Redirect}};
 use tower_sessions::Session;
 
 use crate::{
@@ -65,13 +64,12 @@ async fn parse_file_upload(mut multipart: Multipart) -> Result<ParseResult, Data
 }
 
 pub async fn post_forms_text_analyzer(
-    State(db): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     multipart: Multipart,
 ) -> HandlerResult {
     let (user_id, user_email) = match &current_user {
-        CurrentUser::Authenticated { user_id, email, .. } => (*user_id, email.clone()),
+        CurrentUser::Authenticated { user_id, email, .. } => (user_id.clone(), email.clone()),
         CurrentUser::Guest => unreachable!("Protected route accessed by guest"),
     };
 
@@ -88,10 +86,9 @@ pub async fn post_forms_text_analyzer(
     let calculated_price = text_length * pricing::PRICE_PER_CHARACTER;
     let price_amount = calculated_price.max(pricing::MINIMUM_ORDER_AMOUNT);
 
-    let order_number = Order::generate_order_number(user_id);
+    let order_number = Order::generate_order_number(&user_id);
 
     let order = commands::order::create_order(
-        &db,
         commands::order::CreateOrderParams {
             user_id,
             user_email,
@@ -104,5 +101,5 @@ pub async fn post_forms_text_analyzer(
         },
     ).await?;
 
-    Ok(Redirect::to(&paths::helpers::quote_path(order.order_id)).into_response())
+    Ok(Redirect::to(&paths::helpers::quote_path(&order.id)).into_response())
 }

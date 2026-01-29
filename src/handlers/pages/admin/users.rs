@@ -1,6 +1,5 @@
 use axum::{Extension, extract::{Query, State}};
 use maud::Markup;
-use sqlx::PgPool;
 
 use crate::{
     auth::CurrentUser,
@@ -16,16 +15,15 @@ use crate::{
 
 pub async fn get_admin_users(
     State(config): State<AppConfig>,
-    State(db): State<PgPool>,
     Query(query): Query<PaginationQuery>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
 ) -> Result<Markup, HandlerError> {
     let page = query.page.max(1);
 
-    let users = admin::get_users_paginated(&db, page, ITEMS_PER_PAGE).await?;
+    let users = admin::get_users_paginated(page, ITEMS_PER_PAGE).await?;
 
-    let total_count = admin::get_total_user_count(&db).await?;
+    let total_count = admin::get_total_user_count().await?;
 
     let paginated = PaginatedResult::new(users, total_count, page, ITEMS_PER_PAGE);
 

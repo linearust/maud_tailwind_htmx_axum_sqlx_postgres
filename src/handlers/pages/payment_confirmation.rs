@@ -1,6 +1,5 @@
 use axum::{Extension, extract::{Path, State}};
 use maud::Markup;
-use sqlx::PgPool;
 
 use crate::{
     auth::CurrentUser,
@@ -15,14 +14,14 @@ use crate::{
 
 pub async fn get_payment_confirmation(
     State(config): State<AppConfig>,
-    State(db): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
-    Path(order_id): Path<OrderId>,
+    Path(raw_order_id): Path<String>,
 ) -> Result<Markup, HandlerError> {
     let user_id = current_user.require_authenticated();
+    let order_id = OrderId::parse(&raw_order_id).ok_or(DataError::NotFound(errors::ORDER_NOT_FOUND))?;
 
-    let order = queries::order::get_order_for_user(&db, order_id, user_id).await?;
+    let order = queries::order::get_order_for_user(&order_id, user_id).await?;
 
     if !matches!(order.payment_status, PaymentStatus::Paid) {
         return Err(DataError::Unauthorized(errors::PAYMENT_NOT_COMPLETED).into());

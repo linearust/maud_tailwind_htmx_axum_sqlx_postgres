@@ -1,4 +1,4 @@
-use time::{OffsetDateTime, format_description::well_known::Rfc3339};
+use chrono::{DateTime, Utc};
 
 pub fn format_price(amount: i32) -> String {
     amount
@@ -12,25 +12,6 @@ pub fn format_price(amount: i32) -> String {
         .join(",")
 }
 
-pub fn format_datetime(datetime: OffsetDateTime) -> String {
-    let formatted = match datetime.format(&Rfc3339) {
-        Ok(s) => s,
-        Err(e) => {
-            tracing::error!(error = %e, "Failed to format datetime as RFC3339");
-            return "Invalid date".to_string();
-        }
-    };
-
-    let datetime_parts: Vec<&str> = formatted.split('T').collect();
-    let date_part = datetime_parts.first().copied().unwrap_or("");
-    let time_part = datetime_parts
-        .get(1)
-        .and_then(|t| t.split('.').next())
-        .unwrap_or("");
-
-    if time_part.is_empty() {
-        date_part.to_string()
-    } else {
-        format!("{} {}", date_part, time_part)
-    }
+pub fn format_datetime(datetime: DateTime<Utc>) -> String {
+    datetime.format("%Y-%m-%d %H:%M:%S").to_string()
 }

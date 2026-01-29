@@ -1,51 +1,53 @@
-use sqlx::PgPool;
+use serde::Serialize;
 
 use crate::{
     constants::errors,
-    data::{ensure_rows_affected, errors::DataError},
+    data::errors::DataError,
+    db::DB,
     models::{todo::Todo, TodoId, UserId},
 };
 
-pub async fn create_todo(db: &PgPool, user_id: UserId, task: &str) -> Result<(), DataError> {
-    sqlx::query!(
-        "INSERT INTO todos(task, author_id) VALUES($1, $2)",
-        task,
-        user_id.as_i32()
-    )
-    .execute(db)
-    .await?;
+#[derive(Serialize)]
+struct TodoData {
+    task: String,
+    author: surrealdb::RecordId,
+}
+
+pub async fn create_todo(user_id: &UserId, task: &str) -> Result<(), DataError> {
+    let _: Option<Todo> = DB
+        .create("todo")
+        .content(TodoData {
+            task: task.to_string(),
+            author: user_id.clone().into_record_id(),
+        })
+        .await?;
 
     Ok(())
 }
 
-pub async fn toggle_todo_completion(
-    db: &PgPool,
-    user_id: UserId,
-    todo_id: TodoId,
-) -> Result<Todo, DataError> {
-    let todo = sqlx::query_as!(
-        Todo,
-        "UPDATE todos SET is_done = NOT is_done
-         WHERE todo_id = $1 AND author_id = $2
-         RETURNING todo_id, task, is_done",
-        todo_id.as_i32(),
-        user_id.as_i32()
-    )
-    .fetch_one(db)
-    .await
-    .map_err(|e| crate::data::map_row_not_found(e, errors::TODO_NOT_FOUND))?;
+pub async fn toggle_todo_completion(user_id: &UserId, todo_id: &TodoId) -> Result<Todo, DataError> {
+    let mut result = DB
+        .query("UPDATE $todo SET is_done = !is_done WHERE author = $author RETURN id, task, is_done")
+        .bind(("todo", todo_id.clone().into_record_id()))
+        .bind(("author", user_id.clone().into_record_id()))
+        .await?;
 
-    Ok(todo)
+    let todo: Option<Todo> = result.take(0)?;
+    todo.ok_or(DataError::NotFound(errors::TODO_NOT_FOUND))
 }
 
-pub async fn delete_todo(db: &PgPool, user_id: UserId, todo_id: TodoId) -> Result<(), DataError> {
-    let result = sqlx::query!(
-        "DELETE FROM todos WHERE todo_id = $1 AND author_id = $2",
-        todo_id.as_i32(),
-        user_id.as_i32()
-    )
-    .execute(db)
-    .await?;
+pub async fn delete_todo(user_id: &UserId, todo_id: &TodoId) -> Result<(), DataError> {
+    let mut result = DB
+        .query("DELETE $todo WHERE author = $author RETURN BEFORE")
+        .bind(("todo", todo_id.clone().into_record_id()))
+        .bind(("author", user_id.clone().into_record_id()))
+        .await?;
 
-    ensure_rows_affected(result, errors::TODO_NOT_FOUND)
+    let deleted: Option<Todo> = result.take(0)?;
+
+    if deleted.is_none() {
+        return Err(DataError::NotFound(errors::TODO_NOT_FOUND));
+    }
+
+    Ok(())
 }

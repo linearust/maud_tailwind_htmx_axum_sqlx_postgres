@@ -1,15 +1,15 @@
-use sqlx::PgPool;
+use crate::{
+    data::errors::DataError,
+    db::DB,
+    models::{todo::Todo, UserId},
+};
 
-use crate::{data::errors::DataError, models::{todo::Todo, UserId}};
+pub async fn get_todos_for_user(user_id: &UserId) -> Result<Vec<Todo>, DataError> {
+    let mut result = DB
+        .query("SELECT id, task, is_done, created_at FROM todo WHERE author = $author ORDER BY created_at DESC")
+        .bind(("author", user_id.clone().into_record_id()))
+        .await?;
 
-pub async fn get_todos_for_user(db: &PgPool, user_id: UserId) -> Result<Vec<Todo>, DataError> {
-    let todos = sqlx::query_as!(
-        Todo,
-        "SELECT todo_id, task, is_done FROM todos WHERE author_id = $1 ORDER BY created_at DESC",
-        user_id.as_i32()
-    )
-    .fetch_all(db)
-    .await?;
-
+    let todos: Vec<Todo> = result.take(0)?;
     Ok(todos)
 }

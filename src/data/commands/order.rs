@@ -1,6 +1,15 @@
-use sqlx::PgPool;
+use chrono::Utc;
+use serde::Serialize;
+use surrealdb::sql::Datetime;
 
-use crate::{data::errors::DataError, models::{OrderId, order::{Order, PaymentStatus}, UserId}};
+use crate::{
+    data::errors::DataError,
+    db::DB,
+    models::{
+        order::{Order, PaymentStatus},
+        OrderId, UserId,
+    },
+};
 
 pub struct CreateOrderParams {
     pub user_id: UserId,
@@ -13,76 +22,61 @@ pub struct CreateOrderParams {
     pub order_number: String,
 }
 
-pub async fn create_order(db: &PgPool, params: CreateOrderParams) -> Result<Order, DataError> {
-    let order = sqlx::query_as!(
-        Order,
-        r#"
-        INSERT INTO orders(user_id, user_email, filename, file_size, text_content, text_length, price_amount, payment_status, order_number)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING
-            order_id,
-            user_id,
-            user_email,
-            filename,
-            file_size,
-            text_content,
-            text_length,
-            price_amount,
-            payment_status as "payment_status: PaymentStatus",
-            payment_key,
-            order_number,
-            created_at,
-            paid_at
-        "#,
-        params.user_id.as_i32(),
-        params.user_email,
-        params.filename,
-        params.file_size,
-        params.text_content,
-        params.text_length,
-        params.price_amount,
-        PaymentStatus::Pending as PaymentStatus,
-        params.order_number
-    )
-    .fetch_one(db)
-    .await?;
+#[derive(Serialize)]
+struct OrderData {
+    user: surrealdb::RecordId,
+    user_email: String,
+    filename: String,
+    file_size: i32,
+    text_content: String,
+    text_length: i32,
+    price_amount: i32,
+    payment_status: String,
+    order_number: String,
+}
 
-    Ok(order)
+pub async fn create_order(params: CreateOrderParams) -> Result<Order, DataError> {
+    let order: Option<Order> = DB
+        .create("order")
+        .content(OrderData {
+            user: params.user_id.into_record_id(),
+            user_email: params.user_email,
+            filename: params.filename,
+            file_size: params.file_size,
+            text_content: params.text_content,
+            text_length: params.text_length,
+            price_amount: params.price_amount,
+            payment_status: PaymentStatus::Pending.as_str().to_string(),
+            order_number: params.order_number,
+        })
+        .await?;
+
+    Ok(order.expect("Order should be created"))
 }
 
 pub async fn update_order_payment(
-    db: &PgPool,
-    order_id: OrderId,
+    order_id: &OrderId,
     payment_key: &str,
     payment_status: PaymentStatus,
 ) -> Result<Order, DataError> {
-    let order = sqlx::query_as!(
-        Order,
-        r#"
-        UPDATE orders
-        SET payment_key = $2, payment_status = $3, paid_at = CASE WHEN $3 = 'paid' THEN NOW() ELSE paid_at END
-        WHERE order_id = $1 AND payment_status = 'pending'
-        RETURNING
-            order_id,
-            user_id,
-            user_email,
-            filename,
-            file_size,
-            text_content,
-            text_length,
-            price_amount,
-            payment_status as "payment_status: PaymentStatus",
-            payment_key,
-            order_number,
-            created_at,
-            paid_at
-        "#,
-        order_id.as_uuid(),
-        payment_key,
-        payment_status as PaymentStatus
-    )
-    .fetch_one(db)
-    .await?;
+    let paid_at: Option<Datetime> = if payment_status == PaymentStatus::Paid {
+        Some(Datetime::from(Utc::now()))
+    } else {
+        None
+    };
 
-    Ok(order)
+    let mut result = DB
+        .query(
+            "UPDATE $order SET payment_key = $payment_key, payment_status = $payment_status, paid_at = $paid_at
+             WHERE payment_status = 'pending'
+             RETURN *",
+        )
+        .bind(("order", order_id.clone().into_record_id()))
+        .bind(("payment_key", payment_key.to_string()))
+        .bind(("payment_status", payment_status.as_str().to_string()))
+        .bind(("paid_at", paid_at))
+        .await?;
+
+    let order: Option<Order> = result.take(0)?;
+    Ok(order.expect("Order should be updated"))
 }

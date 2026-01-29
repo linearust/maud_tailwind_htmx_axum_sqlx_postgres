@@ -1,48 +1,56 @@
-use sqlx::PgPool;
-use time::{Duration, OffsetDateTime};
+use chrono::{Duration, Utc};
+use serde::{Deserialize, Serialize};
+use surrealdb::RecordId;
+use surrealdb::sql::Datetime;
 
 use crate::constants::{auth::MAGIC_LINK_EXPIRY_MINUTES, messages};
-use crate::data::{errors::DataError, map_row_unauthorized};
+use crate::data::errors::DataError;
+use crate::db::DB;
 
-pub async fn create_magic_link(
-    db: &PgPool,
-    email: &str,
-    token: &str,
-) -> Result<(), DataError> {
-    let expires_at = OffsetDateTime::now_utc() + Duration::minutes(MAGIC_LINK_EXPIRY_MINUTES);
+#[derive(Serialize)]
+struct MagicLinkData {
+    email: String,
+    expires_at: Datetime,
+}
 
-    sqlx::query!("DELETE FROM magic_links WHERE email = $1", email)
-        .execute(db)
+#[derive(Deserialize)]
+struct MagicLinkRecord {
+    email: String,
+}
+
+pub async fn create_magic_link(email: &str, token: &str) -> Result<(), DataError> {
+    let expires_at = Datetime::from(Utc::now() + Duration::minutes(MAGIC_LINK_EXPIRY_MINUTES));
+
+    // Delete existing magic links for this email
+    DB.query("DELETE magic_link WHERE email = $email")
+        .bind(("email", email.to_string()))
         .await?;
 
-    sqlx::query!(
-        "INSERT INTO magic_links(token, email, expires_at) VALUES($1, $2, $3)",
-        token,
-        email,
-        expires_at
-    )
-    .execute(db)
-    .await?;
+    // Create new magic link with token as ID
+    let record_id = RecordId::from(("magic_link", token));
+    let _: Option<MagicLinkRecord> = DB
+        .create(record_id)
+        .content(MagicLinkData {
+            email: email.to_string(),
+            expires_at,
+        })
+        .await?;
 
     Ok(())
 }
 
-pub async fn verify_and_consume_magic_link(
-    db: &PgPool,
-    token: &str,
-) -> Result<String, DataError> {
-    let now = OffsetDateTime::now_utc();
+pub async fn verify_and_consume_magic_link(token: &str) -> Result<String, DataError> {
+    let record_id = RecordId::from(("magic_link", token));
 
-    let row = sqlx::query!(
-        "DELETE FROM magic_links
-         WHERE token = $1 AND expires_at > $2
-         RETURNING email",
-        token,
-        now
-    )
-    .fetch_one(db)
-    .await
-    .map_err(|e| map_row_unauthorized(e, messages::MAGIC_LINK_INVALID))?;
+    // Load the magic link
+    let record: Option<MagicLinkRecord> = DB.select(&record_id).await?;
 
-    Ok(row.email)
+    let Some(link) = record else {
+        return Err(DataError::Unauthorized(messages::MAGIC_LINK_INVALID));
+    };
+
+    // Delete it (consume)
+    let _: Option<MagicLinkRecord> = DB.delete(&record_id).await?;
+
+    Ok(link.email)
 }

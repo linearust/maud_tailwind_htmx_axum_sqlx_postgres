@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use axum::{Extension, Form, extract::State, http::StatusCode, response::{IntoResponse, Response}};
-use sqlx::PgPool;
+
 use tower_sessions::Session;
 use validator::Validate;
 
@@ -22,7 +22,6 @@ use super::parse_validation_errors;
 
 pub async fn post_forms_contact(
     State(config): State<AppConfig>,
-    State(db): State<PgPool>,
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
     Form(form): Form<ContactForm>,
@@ -40,7 +39,7 @@ pub async fn post_forms_contact(
 
     let email_to_use = match &current_user {
         CurrentUser::Authenticated { user_id, email, .. } => {
-            queries::user::get_user_email(&db, *user_id)
+            queries::user::get_user_email(user_id)
                 .await?
                 .unwrap_or_else(|| email.clone())
         }

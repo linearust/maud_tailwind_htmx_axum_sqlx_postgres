@@ -1,43 +1,47 @@
-use sqlx::{
-    postgres::{PgConnectOptions, PgPool, PgPoolOptions},
-    ConnectOptions,
-};
-use std::str::FromStr;
+use surrealdb::opt::auth::Root;
 
-pub async fn init_database(database_url: &str) -> PgPool {
-    let options = PgConnectOptions::from_str(database_url).unwrap_or_else(|e| {
-        eprintln!("Failed to parse DATABASE_URL: {}", e);
-        eprintln!("\nThe DATABASE_URL format should be:");
-        eprintln!("  postgresql://username:password@localhost:5432/database_name");
+use super::schema::init_schema;
+use crate::db::DB;
+
+pub async fn init_database(database_url: &str) {
+    DB.connect(database_url).await.unwrap_or_else(|e| {
+        eprintln!("Failed to connect to database: {}", e);
+        eprintln!("\nThe DATABASE_URL format should be one of:");
+        eprintln!("  mem://                           (in-memory)");
+        eprintln!("  surrealkv://path/to/data         (local file)");
+        eprintln!("  ws://localhost:8000              (WebSocket)");
+        eprintln!("  wss://cloud.surrealdb.com        (WebSocket Secure)");
         eprintln!("\nPlease check your .env file.");
         std::process::exit(1);
-    }).disable_statement_logging();
+    });
 
-    let db = PgPoolOptions::new()
-        .acquire_timeout(std::time::Duration::from_secs(5))
-        .connect_with(options)
+    if database_url.starts_with("ws://") || database_url.starts_with("wss://") {
+        let username =
+            dotenvy::var("SURREAL_USER").unwrap_or_else(|_| "root".to_string());
+        let password =
+            dotenvy::var("SURREAL_PASS").unwrap_or_else(|_| "root".to_string());
+
+        DB.signin(Root {
+            username: &username,
+            password: &password,
+        })
         .await
         .unwrap_or_else(|e| {
-            eprintln!("Failed to connect to database: {}", e);
+            eprintln!("Failed to authenticate with SurrealDB: {}", e);
             eprintln!("\nTroubleshooting:");
-            eprintln!("  1. Is PostgreSQL running?");
-            eprintln!("  2. Are the credentials in DATABASE_URL correct?");
-            eprintln!("  3. Does the database exist?");
-            eprintln!("  4. Is the database accepting connections on the specified host/port?");
+            eprintln!("  1. Check SURREAL_USER and SURREAL_PASS in .env");
+            eprintln!("  2. Verify the SurrealDB server is running");
             std::process::exit(1);
         });
+    }
 
-    sqlx::migrate!()
-        .run(&db)
-        .await
-        .unwrap_or_else(|e| {
-            eprintln!("Failed to run database migrations: {}", e);
-            eprintln!("\nTroubleshooting:");
-            eprintln!("  1. Check if migration files in migrations/ are valid SQL");
-            eprintln!("  2. Verify database schema hasn't been manually modified");
-            eprintln!("  3. If needed, drop and recreate the database to start fresh");
-            std::process::exit(1);
-        });
+    let db_name = dotenvy::var("SURREAL_DB").unwrap_or_else(|_| "app".to_string());
+    let ns_name = dotenvy::var("SURREAL_NS").unwrap_or_else(|_| "app".to_string());
 
-    db
+    DB.use_ns(&ns_name).use_db(&db_name).await.unwrap_or_else(|e| {
+        eprintln!("Failed to select namespace/database: {}", e);
+        std::process::exit(1);
+    });
+
+    init_schema().await;
 }

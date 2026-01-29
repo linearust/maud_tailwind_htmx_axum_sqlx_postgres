@@ -35,7 +35,7 @@ pub fn order_detail(
                     }
                     div {
                         span class="text-gray-600" { "Order ID: " }
-                        span class="font-mono text-xs" { (order.order_id) }
+                        span class="font-mono text-xs" { (order.id) }
                     }
                     div {
                         span class="text-gray-600" { "Status: " }
@@ -65,7 +65,7 @@ pub fn order_detail(
                 div class="space-y-2 text-sm" {
                     div {
                         span class="text-gray-600" { "Email: " }
-                        a href=(paths::with_param(paths::pages::admin::USER_DETAIL, "user_id", &order.user_id))
+                        a href=(paths::with_param(paths::pages::admin::USER_DETAIL, "user_id", &order.user))
                             class="text-indigo-600 hover:underline"
                         {
                             (order.user_email)
@@ -73,7 +73,7 @@ pub fn order_detail(
                     }
                     div {
                         span class="text-gray-600" { "User ID: " }
-                        span class="font-mono text-xs" { (order.user_id) }
+                        span class="font-mono text-xs" { (order.user) }
                     }
                 }
             }

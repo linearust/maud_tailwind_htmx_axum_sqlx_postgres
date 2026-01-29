@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 pub const FIELD_TASK: &str = "task";
@@ -9,8 +9,9 @@ pub struct CreateTodoForm {
     pub task: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Todo {
-    pub todo_id: crate::models::TodoId,
+    pub id: crate::models::TodoId,
     pub task: String,
     pub is_done: bool,
 }

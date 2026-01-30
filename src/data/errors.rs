@@ -14,4 +14,7 @@ pub enum DataError {
 
     #[error("{0}")]
     InvalidInput(String),
+
+    #[error("{0}")]
+    CreationFailed(&'static str),
 }

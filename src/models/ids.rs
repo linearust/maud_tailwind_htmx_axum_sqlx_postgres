@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use surrealdb::RecordIdKey;
 
+use crate::data::errors::DataError;
+
 /// Macro for strongly-typed database identifiers using SurrealDB's RecordId.
 /// Prevents accidental confusion between different ID types ("parse, don't validate" pattern).
 macro_rules! define_id {
@@ -65,6 +67,10 @@ impl UserId {
         }
         Some(Self::new(s.to_string()))
     }
+
+    pub fn parse_or_invalid(s: &str) -> Result<Self, DataError> {
+        Self::parse(s).ok_or_else(|| DataError::InvalidInput("Invalid user ID".to_string()))
+    }
 }
 
 impl TodoId {
@@ -74,6 +80,10 @@ impl TodoId {
         }
         Some(Self::new(s.to_string()))
     }
+
+    pub fn parse_or_invalid(s: &str) -> Result<Self, DataError> {
+        Self::parse(s).ok_or_else(|| DataError::InvalidInput("Invalid todo ID".to_string()))
+    }
 }
 
 impl OrderId {
@@ -82,5 +92,9 @@ impl OrderId {
             return None;
         }
         Some(Self::new(s.to_string()))
+    }
+
+    pub fn parse_or_not_found(s: &str, error_message: &'static str) -> Result<Self, DataError> {
+        Self::parse(s).ok_or(DataError::NotFound(error_message))
     }
 }

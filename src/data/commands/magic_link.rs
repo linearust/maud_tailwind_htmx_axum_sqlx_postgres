@@ -1,4 +1,4 @@
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use surrealdb::RecordId;
 use surrealdb::sql::Datetime;
@@ -16,6 +16,7 @@ struct MagicLinkData {
 #[derive(Deserialize)]
 struct MagicLinkRecord {
     email: String,
+    expires_at: DateTime<Utc>,
 }
 
 pub async fn create_magic_link(email: &str, token: &str) -> Result<(), DataError> {
@@ -48,6 +49,13 @@ pub async fn verify_and_consume_magic_link(token: &str) -> Result<String, DataEr
     let Some(link) = record else {
         return Err(DataError::Unauthorized(messages::MAGIC_LINK_INVALID));
     };
+
+    // Check expiry before consuming
+    if link.expires_at < Utc::now() {
+        // Delete expired link
+        let _: Option<MagicLinkRecord> = DB.delete(&record_id).await?;
+        return Err(DataError::Unauthorized(messages::MAGIC_LINK_INVALID));
+    }
 
     // Delete it (consume)
     let _: Option<MagicLinkRecord> = DB.delete(&record_id).await?;

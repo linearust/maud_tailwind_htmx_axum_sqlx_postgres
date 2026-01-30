@@ -4,6 +4,7 @@ use maud::Markup;
 use crate::{
     auth::CurrentUser,
     config::AppConfig,
+    constants,
     data::queries,
     handlers::errors::HandlerError,
     session::FlashMessage,
@@ -15,9 +16,11 @@ pub async fn get_dashboard(
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
 ) -> Result<Markup, HandlerError> {
-    let user_id = current_user.require_authenticated();
+    let user_id = current_user.require_authenticated()?;
 
-    let recent_orders = queries::order::get_orders_for_user(user_id, 10).await?;
+    let recent_orders =
+        queries::order::get_orders_for_user(user_id, constants::dashboard::RECENT_ORDERS_LIMIT)
+            .await?;
 
     Ok(pages::dashboard(
         &current_user,

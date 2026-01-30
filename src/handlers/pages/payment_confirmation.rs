@@ -18,8 +18,8 @@ pub async fn get_payment_confirmation(
     Extension(flash): Extension<Option<FlashMessage>>,
     Path(raw_order_id): Path<String>,
 ) -> Result<Markup, HandlerError> {
-    let user_id = current_user.require_authenticated();
-    let order_id = OrderId::parse(&raw_order_id).ok_or(DataError::NotFound(errors::ORDER_NOT_FOUND))?;
+    let user_id = current_user.require_authenticated()?;
+    let order_id = OrderId::parse_or_not_found(&raw_order_id, errors::ORDER_NOT_FOUND)?;
 
     let order = queries::order::get_order_for_user(&order_id, user_id).await?;
 

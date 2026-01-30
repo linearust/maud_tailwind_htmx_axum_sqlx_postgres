@@ -20,9 +20,7 @@ pub async fn get_admin_user_detail(
     Extension(flash): Extension<Option<FlashMessage>>,
 ) -> Result<Markup, HandlerError> {
     let page = query.page.max(1);
-    let user_id = UserId::parse(&raw_user_id).ok_or_else(|| {
-        crate::data::errors::DataError::InvalidInput("Invalid user ID".to_string())
-    })?;
+    let user_id = UserId::parse_or_invalid(&raw_user_id)?;
 
     let user = admin::get_user_detail(&user_id).await?;
 

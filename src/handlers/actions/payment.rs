@@ -1,12 +1,12 @@
 use axum::{Extension, Form, extract::{Query, State}, response::{IntoResponse, Redirect}};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tower_sessions::Session;
 
 use crate::{
     auth::CurrentUser,
     config::AppConfig,
     constants::messages,
-    data::{commands, queries},
+    data::{commands::{self, order::ConfirmPaymentParams}, queries},
     session::FlashMessage,
     handlers::errors::HandlerResult,
     models::{OrderId, order::PaymentStatus},
@@ -23,7 +23,7 @@ pub async fn post_actions_payment_initiate(
     session: Session,
     Form(form): Form<PaymentInitiateForm>,
 ) -> HandlerResult {
-    let user_id = current_user.require_authenticated();
+    let user_id = current_user.require_authenticated()?;
 
     let order = queries::order::get_order_for_user(&form.order_id, user_id).await?;
 
@@ -46,50 +46,6 @@ pub struct PaymentVerifyQuery {
     amount: i32,
 }
 
-#[derive(Serialize)]
-struct TossPaymentConfirmationRequest {
-    #[serde(rename = "paymentKey")]
-    payment_key: String,
-    #[serde(rename = "orderId")]
-    order_id: String,
-    amount: i32,
-}
-
-
-async fn confirm_payment_with_toss(secret_key: &str, query: &PaymentVerifyQuery) -> PaymentStatus {
-    let confirm_request = TossPaymentConfirmationRequest {
-        payment_key: query.payment_key.clone(),
-        order_id: query.order_id.clone(),
-        amount: query.amount,
-    };
-
-    let response = reqwest::Client::new()
-        .post(crate::constants::payment::TOSS_API_CONFIRM_URL)
-        .basic_auth(secret_key, Some(""))
-        .json(&confirm_request)
-        .send()
-        .await;
-
-    match response {
-        Ok(resp) if resp.status().is_success() => PaymentStatus::Paid,
-        Ok(resp) => {
-            let error_body = match resp.text().await {
-                Ok(body) => body,
-                Err(e) => {
-                    tracing::error!("Failed to decode Toss API error response: {}", e);
-                    "Failed to decode response".to_string()
-                }
-            };
-            tracing::error!("Toss payment confirmation failed: {}", error_body);
-            PaymentStatus::Failed
-        }
-        Err(e) => {
-            tracing::error!("Failed to call Toss API: {}", e);
-            PaymentStatus::Failed
-        }
-    }
-}
-
 async fn redirect_with_error(session: &Session, order_id: &OrderId) -> HandlerResult {
     Ok(FlashMessage::error(messages::PAYMENT_FAILED)
         .set_and_redirect(session, &paths::helpers::quote_path(order_id))
@@ -102,7 +58,7 @@ pub async fn get_actions_payment_verify(
     session: Session,
     Query(query): Query<PaymentVerifyQuery>,
 ) -> HandlerResult {
-    let user_id = current_user.require_authenticated();
+    let user_id = current_user.require_authenticated()?;
     let order = queries::order::get_order_by_order_number_for_user(&query.order_id, user_id).await?;
 
     if query.amount != order.price_amount {
@@ -110,7 +66,12 @@ pub async fn get_actions_payment_verify(
         return redirect_with_error(&session, &order.id).await;
     }
 
-    let status = confirm_payment_with_toss(config.payment().toss_secret_key(), &query).await;
+    let status = commands::order::confirm_payment_with_toss(ConfirmPaymentParams {
+        secret_key: config.payment().toss_secret_key().to_string(),
+        order_id: query.order_id.clone(),
+        payment_key: query.payment_key.clone(),
+        amount: query.amount,
+    }).await;
 
     commands::order::update_order_payment(&order.id, &query.payment_key, status).await?;
 

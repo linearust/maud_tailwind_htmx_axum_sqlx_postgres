@@ -5,7 +5,7 @@ use crate::{
     auth::CurrentUser,
     config::AppConfig,
     constants::errors,
-    data::{errors::DataError, queries},
+    data::queries,
     handlers::errors::HandlerError,
     models::OrderId,
     session::FlashMessage,
@@ -18,8 +18,8 @@ pub async fn get_quote(
     Extension(flash): Extension<Option<FlashMessage>>,
     Path(raw_order_id): Path<String>,
 ) -> Result<Markup, HandlerError> {
-    let user_id = current_user.require_authenticated();
-    let order_id = OrderId::parse(&raw_order_id).ok_or(DataError::NotFound(errors::ORDER_NOT_FOUND))?;
+    let user_id = current_user.require_authenticated()?;
+    let order_id = OrderId::parse_or_not_found(&raw_order_id, errors::ORDER_NOT_FOUND)?;
 
     let order = queries::order::get_order_for_user(&order_id, user_id).await?;
 

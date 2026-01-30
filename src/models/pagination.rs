@@ -4,9 +4,10 @@ pub fn default_page() -> i64 {
     1
 }
 
-/// Calculate SQL OFFSET from page number (1-indexed).
+/// Calculate query OFFSET from page number (1-indexed).
+/// Pages below 1 are clamped to 1.
 pub fn offset(page: i64, per_page: i64) -> i64 {
-    (page - 1) * per_page
+    (page.max(1) - 1) * per_page
 }
 
 #[derive(Deserialize)]

@@ -16,10 +16,8 @@ pub async fn post_forms_admin_users_user_id_grant_role(
     Extension(current_user): Extension<CurrentUser>,
     session: Session,
 ) -> HandlerResult {
-    let admin_user_id = current_user.require_authenticated();
-    let user_id = UserId::parse(&raw_user_id).ok_or_else(|| {
-        crate::data::errors::DataError::InvalidInput("Invalid user ID".to_string())
-    })?;
+    let admin_user_id = current_user.require_authenticated()?;
+    let user_id = UserId::parse_or_invalid(&raw_user_id)?;
 
     admin::grant_admin_role(&user_id, admin_user_id).await?;
 

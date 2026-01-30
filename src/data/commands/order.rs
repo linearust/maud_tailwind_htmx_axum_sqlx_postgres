@@ -3,6 +3,7 @@ use serde::Serialize;
 use surrealdb::sql::Datetime;
 
 use crate::{
+    constants::{errors, payment},
     data::errors::DataError,
     db::DB,
     models::{
@@ -51,7 +52,57 @@ pub async fn create_order(params: CreateOrderParams) -> Result<Order, DataError>
         })
         .await?;
 
-    Ok(order.expect("Order should be created"))
+    Ok(order.ok_or(DataError::CreationFailed(errors::ORDER_CREATION_FAILED))?)
+}
+
+#[derive(Serialize)]
+struct TossPaymentConfirmationRequest {
+    #[serde(rename = "paymentKey")]
+    payment_key: String,
+    #[serde(rename = "orderId")]
+    order_id: String,
+    amount: i32,
+}
+
+pub struct ConfirmPaymentParams {
+    pub secret_key: String,
+    pub order_id: String,
+    pub payment_key: String,
+    pub amount: i32,
+}
+
+pub async fn confirm_payment_with_toss(params: ConfirmPaymentParams) -> PaymentStatus {
+    let confirm_request = TossPaymentConfirmationRequest {
+        payment_key: params.payment_key,
+        order_id: params.order_id,
+        amount: params.amount,
+    };
+
+    let response = reqwest::Client::new()
+        .post(payment::TOSS_API_CONFIRM_URL)
+        .basic_auth(&params.secret_key, Some(""))
+        .json(&confirm_request)
+        .send()
+        .await;
+
+    match response {
+        Ok(resp) if resp.status().is_success() => PaymentStatus::Paid,
+        Ok(resp) => {
+            let error_body = match resp.text().await {
+                Ok(body) => body,
+                Err(e) => {
+                    tracing::error!("Failed to decode Toss API error response: {}", e);
+                    "Failed to decode response".to_string()
+                }
+            };
+            tracing::error!("Toss payment confirmation failed: {}", error_body);
+            PaymentStatus::Failed
+        }
+        Err(e) => {
+            tracing::error!("Failed to call Toss API: {}", e);
+            PaymentStatus::Failed
+        }
+    }
 }
 
 pub async fn update_order_payment(
@@ -78,5 +129,5 @@ pub async fn update_order_payment(
         .await?;
 
     let order: Option<Order> = result.take(0)?;
-    Ok(order.expect("Order should be updated"))
+    order.ok_or(DataError::NotFound(errors::ORDER_NOT_FOUND_OR_PROCESSED))
 }

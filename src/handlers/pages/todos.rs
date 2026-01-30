@@ -15,7 +15,7 @@ pub async fn get_todos(
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
 ) -> Result<Markup, HandlerError> {
-    let user_id = current_user.require_authenticated();
+    let user_id = current_user.require_authenticated()?;
 
     let todos = queries::todo::get_todos_for_user(user_id).await?;
 

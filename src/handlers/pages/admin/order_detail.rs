@@ -5,7 +5,7 @@ use crate::{
     auth::CurrentUser,
     config::AppConfig,
     constants::errors,
-    data::{errors::DataError, queries::admin},
+    data::queries::admin,
     session::FlashMessage,
     handlers::errors::HandlerError,
     models::OrderId,
@@ -18,7 +18,7 @@ pub async fn get_admin_order_detail(
     Extension(current_user): Extension<CurrentUser>,
     Extension(flash): Extension<Option<FlashMessage>>,
 ) -> Result<Markup, HandlerError> {
-    let order_id = OrderId::parse(&raw_order_id).ok_or(DataError::NotFound(errors::ORDER_NOT_FOUND))?;
+    let order_id = OrderId::parse_or_not_found(&raw_order_id, errors::ORDER_NOT_FOUND)?;
     let order = admin::get_order_detail(&order_id).await?;
 
     Ok(admin_views::order_detail(

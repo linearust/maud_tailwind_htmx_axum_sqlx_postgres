@@ -28,6 +28,10 @@ impl IntoResponse for HandlerError {
                 tracing::error!(error = %e, "Database error in handler");
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
             }
+            Self::Data(DataError::CreationFailed(msg)) => {
+                tracing::error!("Creation failed: {}", msg);
+                (StatusCode::INTERNAL_SERVER_ERROR, *msg)
+            }
             Self::Session(e) => {
                 tracing::error!(error = %e, "Session error in handler");
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")

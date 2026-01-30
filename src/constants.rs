@@ -42,13 +42,18 @@ pub mod messages {
 }
 
 pub mod errors {
+    pub const USER_NOT_FOUND: &str = "User not found";
     pub const ORDER_NOT_FOUND: &str = "Order not found";
+    pub const ORDER_NOT_FOUND_OR_PROCESSED: &str = "Order not found or already processed";
     pub const TODO_NOT_FOUND: &str = "Todo not found";
     pub const PAYMENT_NOT_COMPLETED: &str = "Payment not completed";
     pub const NOT_YOUR_ORDER: &str = "Not your order";
     pub const NO_FILE_PROVIDED: &str = "No file provided";
     pub const FORBIDDEN: &str = "You don't have permission to access this resource";
     pub const CANNOT_REVOKE_OWN_ADMIN: &str = "Cannot revoke your own admin role";
+    pub const USER_CREATION_FAILED: &str = "Failed to create user";
+    pub const ORDER_CREATION_FAILED: &str = "Failed to create order";
+    pub const AUTHENTICATION_REQUIRED: &str = "Authentication required";
 }
 
 pub mod pricing {
@@ -71,4 +76,8 @@ pub mod logging {
 
 pub mod admin {
     pub const ITEMS_PER_PAGE: i64 = 20;
+}
+
+pub mod dashboard {
+    pub const RECENT_ORDERS_LIMIT: i64 = 10;
 }

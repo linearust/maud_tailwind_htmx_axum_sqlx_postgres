@@ -1,14 +1,13 @@
-use crate::models::UserId;
+use crate::{constants::errors, data::errors::DataError, models::UserId};
 
 pub const SESSION_USER_ID_KEY: &str = "authenticated_user_id";
 
 /// Injected via Extension by session_context middleware.
 ///
-/// # Safety: `require_authenticated()` uses `unreachable!()`
-///
-/// Safe because protected routes use `require_authentication` middleware which redirects
-/// guests before handlers run. If this panics: check route is in protected_routes(),
-/// verify middleware ordering (session_layer → session_context → require_authentication).
+/// Protected routes use `require_authentication` middleware which redirects
+/// guests before handlers run. If `require_authenticated()` returns Err:
+/// check route is in protected_routes(), verify middleware ordering
+/// (session_layer → session_context → require_authentication).
 #[derive(Clone, Debug)]
 pub enum CurrentUser {
     Authenticated {
@@ -20,15 +19,13 @@ pub enum CurrentUser {
 }
 
 impl CurrentUser {
-    /// Only call in protected routes — panics on Guest. See enum docs for safety.
-    pub fn require_authenticated(&self) -> &UserId {
+    /// Only call in protected routes — returns error on Guest.
+    /// If this returns Err, check route is in protected_routes() and
+    /// verify middleware ordering (session_layer → session_context → require_authentication).
+    pub fn require_authenticated(&self) -> Result<&UserId, DataError> {
         match self {
-            CurrentUser::Authenticated { user_id, .. } => user_id,
-            CurrentUser::Guest => unreachable!(
-                "Protected route accessed by guest user. This indicates a middleware \
-                configuration error. Ensure the route is in protected_routes() and \
-                middleware ordering is correct."
-            ),
+            CurrentUser::Authenticated { user_id, .. } => Ok(user_id),
+            CurrentUser::Guest => Err(DataError::Unauthorized(errors::AUTHENTICATION_REQUIRED)),
         }
     }
 

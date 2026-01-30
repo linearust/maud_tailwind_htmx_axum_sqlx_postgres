@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{data::errors::DataError, db::DB, models::UserId};
+use crate::{constants::errors, data::errors::DataError, db::DB, models::UserId};
 
 #[derive(Serialize)]
 struct UserData {
@@ -31,5 +31,5 @@ pub async fn get_or_create_user(email: &str) -> Result<UserId, DataError> {
         .content(UserData { email: email.to_string() })
         .await?;
 
-    Ok(created.expect("User should be created").id)
+    Ok(created.ok_or(DataError::CreationFailed(errors::USER_CREATION_FAILED))?.id)
 }

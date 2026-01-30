@@ -2,13 +2,12 @@
 
 Rust web application template with auth, payments, sessions, and database.
 
-**Stack:** Axum • PostgreSQL + SQLx • Maud • HTMX + Tailwind CSS
+**Stack:** Axum • SurrealDB • Maud • HTMX + Tailwind CSS
 
 ## Quick Start
 
 ```bash
 cp .env.example .env  # Configure environment
-just migrate          # Run migrations
 just run              # Start dev server
 ```
 

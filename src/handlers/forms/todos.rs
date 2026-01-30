@@ -22,7 +22,7 @@ pub async fn post_forms_todos(
     session: Session,
     Form(form): Form<CreateTodoForm>,
 ) -> HandlerResult {
-    let user_id = current_user.require_authenticated();
+    let user_id = current_user.require_authenticated()?;
 
     if let Err(validation_errors) = form.validate() {
         return render_validation_errors(&current_user, config.site_name(), user_id, &form, &validation_errors).await;

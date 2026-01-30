@@ -9,7 +9,7 @@ use axum::{Router, middleware};
 use tower_http::services::ServeDir;
 use tower_sessions::SessionManagerLayer;
 
-use crate::{config::AppState, handlers, middlewares, paths, session_store::SurrealSessionStore};
+use crate::{config::AppState, handlers, middlewares, paths, session::SurrealSessionStore};
 
 pub fn create_routes(state: AppState, session_layer: SessionManagerLayer<SurrealSessionStore>) -> Router {
     Router::new()

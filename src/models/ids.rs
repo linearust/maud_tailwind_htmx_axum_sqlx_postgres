@@ -34,6 +34,22 @@ macro_rules! define_id {
             pub fn key(&self) -> &RecordIdKey {
                 self.0.key()
             }
+
+            pub fn parse(s: &str) -> Option<Self> {
+                if s.is_empty() {
+                    return None;
+                }
+                Some(Self::new(s.to_string()))
+            }
+
+            pub fn parse_or_invalid(s: &str) -> Result<Self, DataError> {
+                Self::parse(s)
+                    .ok_or_else(|| DataError::InvalidInput(concat!("Invalid ", $table, " ID").to_string()))
+            }
+
+            pub fn parse_or_not_found(s: &str, error_message: &'static str) -> Result<Self, DataError> {
+                Self::parse(s).ok_or(DataError::NotFound(error_message))
+            }
         }
 
         impl std::fmt::Display for $name {
@@ -59,42 +75,3 @@ macro_rules! define_id {
 define_id!(UserId, "user");
 define_id!(TodoId, "todo");
 define_id!(OrderId, "order");
-
-impl UserId {
-    pub fn parse(s: &str) -> Option<Self> {
-        if s.is_empty() {
-            return None;
-        }
-        Some(Self::new(s.to_string()))
-    }
-
-    pub fn parse_or_invalid(s: &str) -> Result<Self, DataError> {
-        Self::parse(s).ok_or_else(|| DataError::InvalidInput("Invalid user ID".to_string()))
-    }
-}
-
-impl TodoId {
-    pub fn parse(s: &str) -> Option<Self> {
-        if s.is_empty() {
-            return None;
-        }
-        Some(Self::new(s.to_string()))
-    }
-
-    pub fn parse_or_invalid(s: &str) -> Result<Self, DataError> {
-        Self::parse(s).ok_or_else(|| DataError::InvalidInput("Invalid todo ID".to_string()))
-    }
-}
-
-impl OrderId {
-    pub fn parse(s: &str) -> Option<Self> {
-        if s.is_empty() {
-            return None;
-        }
-        Some(Self::new(s.to_string()))
-    }
-
-    pub fn parse_or_not_found(s: &str, error_message: &'static str) -> Result<Self, DataError> {
-        Self::parse(s).ok_or(DataError::NotFound(error_message))
-    }
-}

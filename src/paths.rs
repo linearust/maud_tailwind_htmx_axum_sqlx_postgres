@@ -82,25 +82,24 @@ pub fn with_page(base: &str, page: i64) -> String {
 
 pub mod helpers {
     use super::*;
-    use crate::models::{OrderId, UserId};
 
-    pub fn user_detail_path(user_id: &UserId) -> String {
+    pub fn user_detail_path(user_id: &impl ToString) -> String {
         with_param(pages::admin::USER_DETAIL, "user_id", user_id)
     }
 
-    pub fn order_detail_path(order_id: impl ToString) -> String {
-        with_param(pages::admin::ORDER_DETAIL, "order_id", &order_id)
+    pub fn order_detail_path(order_id: &impl ToString) -> String {
+        with_param(pages::admin::ORDER_DETAIL, "order_id", order_id)
     }
 
-    pub fn quote_path(order_id: &OrderId) -> String {
+    pub fn quote_path(order_id: &impl ToString) -> String {
         with_param(pages::QUOTE, "order_id", order_id)
     }
 
-    pub fn checkout_path(order_id: &OrderId) -> String {
+    pub fn checkout_path(order_id: &impl ToString) -> String {
         with_param(pages::CHECKOUT, "order_id", order_id)
     }
 
-    pub fn payment_confirmation_path(order_id: &OrderId) -> String {
+    pub fn payment_confirmation_path(order_id: &impl ToString) -> String {
         with_param(pages::PAYMENT_CONFIRMATION, "order_id", order_id)
     }
 }

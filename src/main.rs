@@ -1,5 +1,3 @@
-//! Routes organized by interaction type (pages, forms, actions).
-
 mod auth;
 mod config;
 mod constants;
@@ -13,7 +11,6 @@ mod models;
 mod paths;
 mod routes;
 mod session;
-mod session_store;
 mod views;
 
 use config::{AppConfig, AppState};

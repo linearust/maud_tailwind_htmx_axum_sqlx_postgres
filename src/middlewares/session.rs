@@ -1,7 +1,7 @@
 use axum::{extract::Request, http::StatusCode, middleware::Next, response::IntoResponse};
 use tower_sessions::Session;
 
-use crate::{auth::{CurrentUser, SESSION_USER_ID_KEY}, data::queries, session::FlashMessage, models::UserId};
+use crate::{auth::{self, CurrentUser, SESSION_USER_ID_KEY}, session::FlashMessage, models::UserId};
 
 pub async fn session_context(
     session: Session,
@@ -10,12 +10,8 @@ pub async fn session_context(
 ) -> axum::response::Response {
     let current_user = match session.get::<UserId>(SESSION_USER_ID_KEY).await {
         Ok(Some(user_id)) => {
-            match queries::user::get_user_info(&user_id).await {
-                Ok(Some(info)) => CurrentUser::Authenticated {
-                    user_id,
-                    email: info.email,
-                    is_admin: info.is_admin,
-                },
+            match auth::service::load_user_context(&user_id).await {
+                Ok(Some(user)) => user,
                 Ok(None) => {
                     tracing::warn!("User ID {:?} in session but not found in database", user_id);
                     CurrentUser::Guest

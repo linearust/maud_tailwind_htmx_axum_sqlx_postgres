@@ -13,17 +13,7 @@ use crate::{
     },
 };
 
-use super::shared::check_user_is_admin;
-
-#[derive(Deserialize)]
-struct CountResult {
-    count: i64,
-}
-
-#[derive(Deserialize)]
-struct SumResult {
-    total: Option<i64>,
-}
+use super::shared::{check_user_is_admin, CountResult, SumResult};
 
 // ───────────────────────────────────────────────────────────────────────────────
 // Private Query Helpers
@@ -50,8 +40,8 @@ async fn get_user_order_stats(user_record_id: &RecordId) -> Result<UserOrderStat
     let total_spent: Option<SumResult> = result.take(1)?;
 
     Ok(UserOrderStats {
-        order_count: order_count.map(|c| c.count).unwrap_or(0),
-        total_spent: total_spent.and_then(|s| s.total).unwrap_or(0) as i32,
+        order_count: CountResult::unwrap_or_zero(order_count),
+        total_spent: SumResult::unwrap_or_zero(total_spent) as i32,
     })
 }
 
@@ -74,10 +64,10 @@ pub async fn get_admin_stats() -> Result<AdminStats, DataError> {
     let orders_last_7_days: Option<CountResult> = result.take(3)?;
 
     Ok(AdminStats {
-        total_users: total_users.map(|c| c.count).unwrap_or(0),
-        total_orders: total_orders.map(|c| c.count).unwrap_or(0),
-        total_revenue: total_revenue.and_then(|s| s.total).unwrap_or(0) as i32,
-        orders_last_7_days: orders_last_7_days.map(|c| c.count).unwrap_or(0),
+        total_users: CountResult::unwrap_or_zero(total_users),
+        total_orders: CountResult::unwrap_or_zero(total_orders),
+        total_revenue: SumResult::unwrap_or_zero(total_revenue) as i32,
+        orders_last_7_days: CountResult::unwrap_or_zero(orders_last_7_days),
     })
 }
 
@@ -126,7 +116,7 @@ pub async fn get_total_user_count() -> Result<i64, DataError> {
         .await?;
 
     let count: Option<CountResult> = result.take(0)?;
-    Ok(count.map(|c| c.count).unwrap_or(0))
+    Ok(CountResult::unwrap_or_zero(count))
 }
 
 pub async fn get_user_detail(user_id: &UserId) -> Result<UserDetail, DataError> {
@@ -178,7 +168,7 @@ pub async fn get_user_order_count(user_id: &UserId) -> Result<i64, DataError> {
         .await?;
 
     let count: Option<CountResult> = result.take(0)?;
-    Ok(count.map(|c| c.count).unwrap_or(0))
+    Ok(CountResult::unwrap_or_zero(count))
 }
 
 fn build_status_filter_clause(status_filter: &Option<PaymentStatus>) -> &'static str {
@@ -226,7 +216,7 @@ pub async fn get_total_order_count(status_filter: Option<PaymentStatus>) -> Resu
         .await?;
 
     let count: Option<CountResult> = result.take(0)?;
-    Ok(count.map(|c| c.count).unwrap_or(0))
+    Ok(CountResult::unwrap_or_zero(count))
 }
 
 pub async fn get_order_detail(order_id: &OrderId) -> Result<OrderDetail, DataError> {

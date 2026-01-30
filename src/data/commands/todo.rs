@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Serialize)]
-struct TodoData {
+struct CreateTodoData {
     task: String,
     author: surrealdb::RecordId,
 }
@@ -16,7 +16,7 @@ struct TodoData {
 pub async fn create_todo(user_id: &UserId, task: &str) -> Result<(), DataError> {
     let _: Option<Todo> = DB
         .create("todo")
-        .content(TodoData {
+        .content(CreateTodoData {
             task: task.to_string(),
             author: user_id.clone().into_record_id(),
         })
@@ -44,10 +44,7 @@ pub async fn delete_todo(user_id: &UserId, todo_id: &TodoId) -> Result<(), DataE
         .await?;
 
     let deleted: Option<Todo> = result.take(0)?;
-
-    if deleted.is_none() {
-        return Err(DataError::NotFound(errors::TODO_NOT_FOUND));
-    }
+    deleted.ok_or(DataError::NotFound(errors::TODO_NOT_FOUND))?;
 
     Ok(())
 }

@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::models::{order::PaymentStatus, OrderId, UserId};
+use crate::models::{order::PaymentStatus, OrderId, OrderNumber, UserId};
 
 pub use crate::models::pagination::PaginatedResult;
 
@@ -28,7 +28,7 @@ pub type UserDetail = UserListItem;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrderListItem {
     pub id: OrderId,
-    pub order_number: String,
+    pub order_number: OrderNumber,
     pub user_email: String,
     pub price_amount: i32,
     pub payment_status: PaymentStatus,
@@ -38,7 +38,7 @@ pub struct OrderListItem {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrderDetail {
     pub id: OrderId,
-    pub order_number: String,
+    pub order_number: OrderNumber,
     pub user: UserId,
     pub user_email: String,
     pub price_amount: i32,

@@ -22,7 +22,7 @@ tower-sessions = "0.14.0"
 # Database
 # ============================================================================
 chrono = { version = "0.4.43", features = ["serde"] }
-surrealdb = { version = "2", features = ["kv-mem", "kv-surrealkv"] }
+surrealdb = { version = "2.6.0", features = ["kv-mem", "kv-surrealkv"] }
 time = "0.3.46"
 uuid = { version = "1.20.0", features = ["v4", "serde"] }
 

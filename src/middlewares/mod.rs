@@ -1,4 +1,4 @@
-//! Middleware ordering is critical — see routes/mod.rs and auth.rs.
+//! Middleware ordering is critical — see routes/mod.rs.
 
 mod auth;
 mod http_tracing;

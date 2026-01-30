@@ -1,6 +1,6 @@
 use tower_sessions::SessionManagerLayer;
 
-use crate::{constants, session_store::SurrealSessionStore};
+use crate::{constants, session::SurrealSessionStore};
 
 pub fn init_session() -> SessionManagerLayer<SurrealSessionStore> {
     let session_store = SurrealSessionStore::new();

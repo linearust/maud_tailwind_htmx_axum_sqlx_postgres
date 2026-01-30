@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use axum::{Extension, Form, extract::State, http::StatusCode, response::{IntoResponse, Response}};
 use tower_sessions::Session;
 use validator::Validate;
@@ -24,7 +26,8 @@ pub async fn post_forms_sign_in(
     Form(form): Form<MagicLinkRequestForm>,
 ) -> HandlerResult {
     if let Err(validation_errors) = form.validate() {
-        return Ok(render_validation_errors(&current_user, config.site_name(), &form, &validation_errors));
+        let errors = parse_validation_errors(&validation_errors);
+        return Ok(render_validation_errors(&current_user, config.site_name(), &form, errors));
     }
 
     let token = auth::generate_token();
@@ -46,9 +49,8 @@ fn render_validation_errors(
     current_user: &CurrentUser,
     site_name: &str,
     form: &MagicLinkRequestForm,
-    validation_errors: &validator::ValidationErrors,
+    errors: HashMap<String, String>,
 ) -> Response {
-    let errors = parse_validation_errors(validation_errors);
     (
         StatusCode::BAD_REQUEST,
         pages::sign_in(

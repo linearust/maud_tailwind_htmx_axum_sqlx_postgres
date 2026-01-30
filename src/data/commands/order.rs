@@ -8,7 +8,7 @@ use crate::{
     db::DB,
     models::{
         order::{Order, PaymentStatus},
-        OrderId, UserId,
+        OrderId, OrderNumber, UserId,
     },
 };
 
@@ -20,7 +20,7 @@ pub struct CreateOrderParams {
     pub text_content: String,
     pub text_length: i32,
     pub price_amount: i32,
-    pub order_number: String,
+    pub order_number: OrderNumber,
 }
 
 #[derive(Serialize)]
@@ -32,8 +32,8 @@ struct OrderData {
     text_content: String,
     text_length: i32,
     price_amount: i32,
-    payment_status: String,
-    order_number: String,
+    payment_status: PaymentStatus,
+    order_number: OrderNumber,
 }
 
 pub async fn create_order(params: CreateOrderParams) -> Result<Order, DataError> {
@@ -47,7 +47,7 @@ pub async fn create_order(params: CreateOrderParams) -> Result<Order, DataError>
             text_content: params.text_content,
             text_length: params.text_length,
             price_amount: params.price_amount,
-            payment_status: PaymentStatus::Pending.as_str().to_string(),
+            payment_status: PaymentStatus::Pending,
             order_number: params.order_number,
         })
         .await?;
@@ -66,7 +66,7 @@ struct TossPaymentConfirmationRequest {
 
 pub struct ConfirmPaymentParams {
     pub secret_key: String,
-    pub order_id: String,
+    pub order_number: OrderNumber,
     pub payment_key: String,
     pub amount: i32,
 }
@@ -74,7 +74,7 @@ pub struct ConfirmPaymentParams {
 pub async fn confirm_payment_with_toss(params: ConfirmPaymentParams) -> PaymentStatus {
     let confirm_request = TossPaymentConfirmationRequest {
         payment_key: params.payment_key,
-        order_id: params.order_id,
+        order_id: params.order_number.to_string(),
         amount: params.amount,
     };
 

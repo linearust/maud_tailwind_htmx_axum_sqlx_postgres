@@ -4,7 +4,7 @@ use crate::{
     db::DB,
     models::{
         order::{Order, OrderSummary},
-        OrderId, UserId,
+        OrderId, OrderNumber, UserId,
     },
 };
 
@@ -13,7 +13,7 @@ pub async fn get_order(order_id: &OrderId) -> Result<Option<Order>, DataError> {
     Ok(order)
 }
 
-pub async fn get_order_by_order_number(order_number: &str) -> Result<Option<Order>, DataError> {
+pub async fn get_order_by_order_number(order_number: &OrderNumber) -> Result<Option<Order>, DataError> {
     let mut result = DB
         .query("SELECT * FROM order WHERE order_number = $order_number LIMIT 1")
         .bind(("order_number", order_number.to_string()))
@@ -52,7 +52,7 @@ pub async fn get_order_for_user(order_id: &OrderId, user_id: &UserId) -> Result<
 }
 
 pub async fn get_order_by_order_number_for_user(
-    order_number: &str,
+    order_number: &OrderNumber,
     user_id: &UserId,
 ) -> Result<Order, DataError> {
     let order = get_order_by_order_number(order_number)

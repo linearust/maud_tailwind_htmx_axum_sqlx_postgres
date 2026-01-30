@@ -6,7 +6,7 @@ use crate::{
     constants::{errors, file_upload, pricing},
     data::{commands, errors::DataError},
     handlers::errors::HandlerResult,
-    models::order::Order,
+    models::OrderNumber,
     paths,
     session::FlashMessage,
 };
@@ -86,7 +86,7 @@ pub async fn post_forms_text_analyzer(
     let calculated_price = text_length * pricing::PRICE_PER_CHARACTER;
     let price_amount = calculated_price.max(pricing::MINIMUM_ORDER_AMOUNT);
 
-    let order_number = Order::generate_order_number(&user_id);
+    let order_number = OrderNumber::generate(&user_id);
 
     let order = commands::order::create_order(
         commands::order::CreateOrderParams {

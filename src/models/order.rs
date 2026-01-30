@@ -1,8 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
-use crate::models::{OrderId, UserId};
+use crate::models::{OrderId, OrderNumber, UserId};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -54,20 +53,9 @@ pub struct Order {
     pub price_amount: i32,
     pub payment_status: PaymentStatus,
     pub payment_key: Option<String>,
-    pub order_number: String,
+    pub order_number: OrderNumber,
     pub created_at: DateTime<Utc>,
     pub paid_at: Option<DateTime<Utc>>,
-}
-
-impl Order {
-    pub fn generate_order_number(user_id: &UserId) -> String {
-        let uuid_string = Uuid::new_v4().to_string();
-        let uuid_prefix = uuid_string
-            .split('-')
-            .next()
-            .expect("UUID should have at least one segment");
-        format!("ORD-{}-{}", user_id, uuid_prefix)
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,6 +66,6 @@ pub struct OrderSummary {
     pub text_length: i32,
     pub price_amount: i32,
     pub payment_status: PaymentStatus,
-    pub order_number: String,
+    pub order_number: OrderNumber,
     pub created_at: DateTime<Utc>,
 }

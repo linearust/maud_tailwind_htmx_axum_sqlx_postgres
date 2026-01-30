@@ -9,7 +9,7 @@ use crate::{
     data::{commands::{self, order::ConfirmPaymentParams}, queries},
     session::FlashMessage,
     handlers::errors::HandlerResult,
-    models::{OrderId, order::PaymentStatus},
+    models::{OrderId, OrderNumber, order::PaymentStatus},
     paths,
 };
 
@@ -40,7 +40,7 @@ pub async fn post_actions_payment_initiate(
 #[derive(Deserialize)]
 pub struct PaymentVerifyQuery {
     #[serde(rename = "orderId")]
-    order_id: String,
+    order_number: OrderNumber,
     #[serde(rename = "paymentKey")]
     payment_key: String,
     amount: i32,
@@ -59,7 +59,7 @@ pub async fn get_actions_payment_verify(
     Query(query): Query<PaymentVerifyQuery>,
 ) -> HandlerResult {
     let user_id = current_user.require_authenticated()?;
-    let order = queries::order::get_order_by_order_number_for_user(&query.order_id, user_id).await?;
+    let order = queries::order::get_order_by_order_number_for_user(&query.order_number, user_id).await?;
 
     if query.amount != order.price_amount {
         tracing::error!("Payment amount mismatch: expected {}, got {}", order.price_amount, query.amount);
@@ -68,7 +68,7 @@ pub async fn get_actions_payment_verify(
 
     let status = commands::order::confirm_payment_with_toss(ConfirmPaymentParams {
         secret_key: config.payment().toss_secret_key().to_string(),
-        order_id: query.order_id.clone(),
+        order_number: query.order_number.clone(),
         payment_key: query.payment_key.clone(),
         amount: query.amount,
     }).await;
